@@ -6,5 +6,5 @@
 //  La "anon public key" es pública a propósito: se puede subir a
 //  GitHub sin problema. NUNCA pegues acá la "service_role key".
 // ============================================================
-const SUPABASE_URL = "PEGAR_AQUI_TU_PROJECT_URL";
-const SUPABASE_ANON_KEY = "PEGAR_AQUI_TU_ANON_PUBLIC_KEY";
+const SUPABASE_URL = "https://ipeaopxokuopszmaqeme.supabase.co/rest/v1/";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlwZWFvcHhva3VvcHN6bWFxZW1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ4MDQwMjgsImV4cCI6MjExMDM4MDAyOH0.arSvFUipXo6awtiVvpicrY_45xNtI7-153_wpA0An6w";
