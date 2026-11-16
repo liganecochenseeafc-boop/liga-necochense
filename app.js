@@ -547,9 +547,17 @@ function iniciarReveal() {
 //  LOGIN DE ADMINISTRADOR (Supabase Auth)
 //  La contraseña NO está en el código: vive en Supabase.
 // ============================================================
+// Deja la URL en su forma correcta (https://XXXX.supabase.co), sin barras ni rutas de más
+function normalizarUrlSupabase(u) {
+  u = String(u || "").trim().replace(/^["']|["']$/g, "");
+  const dash = u.match(/supabase\.com\/dashboard\/project\/([a-z0-9]+)/i); // si pegó la dirección del panel
+  if (dash) return "https://" + dash[1].toLowerCase() + ".supabase.co";
+  if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+  try { return new URL(u).origin; } catch (e) { return u; }
+}
 let sb = null;
 if (window.supabase && typeof SUPABASE_URL !== "undefined" && SUPABASE_URL && !SUPABASE_URL.startsWith("PEGAR")) {
-  try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) { sb = null; }
+  try { sb = window.supabase.createClient(normalizarUrlSupabase(SUPABASE_URL), String(SUPABASE_ANON_KEY).trim()); } catch (e) { sb = null; }
 }
 let ES_ADMIN = false, ADMIN_EMAIL = "", ADMIN_ERR = "";
 
@@ -572,6 +580,7 @@ function explicarErrorLogin(err) {
   if (m.includes("invalid login credentials")) return "El email o la contraseña no coinciden con el usuario creado en Supabase. Revisá que escribas la misma contraseña que pusiste al crear el usuario.";
   if (m.includes("email not confirmed")) return "El usuario existe pero no está confirmado. En Supabase andá a Authentication → Users, abrí el usuario y confirmalo (o borralo y crealo de nuevo tildando Auto Confirm User).";
   if (m.includes("api key") || m.includes("apikey") || m.includes("jwt")) return "La clave de config.js es incorrecta. Volvé a copiar la anon public key.";
+  if (m.includes("invalid path")) return "La URL de config.js está mal. Tiene que ser solo https://TU-PROYECTO.supabase.co, sin nada después de .co (la sacás de Project Settings → API → Project URL).";
   if (m.includes("failed to fetch") || m.includes("network") || m.includes("load failed")) return "No se pudo conectar con Supabase. Revisá la URL de config.js (tiene que empezar con https:// y terminar en .supabase.co).";
   if (m.includes("rate limit") || m.includes("too many")) return "Demasiados intentos seguidos. Esperá unos minutos y probá de nuevo.";
   return "Error de Supabase: " + (err && err.message ? err.message : err);
