@@ -430,7 +430,7 @@ function vistaAdmin() {
   const reales = all.filter(x => !x.demo).length;
 
   return `<div class="wrap fade" style="padding-top:40px">
-    <div class="sec-title"><h2>Panel de <em>administrador</em></h2><button class="btn small" id="csv">⬇ Exportar CSV</button></div>
+    <div class="sec-title"><h2>Panel de <em>administrador</em></h2><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="muted" style="font-size:13px">${ADMIN_EMAIL}</span><button class="btn small" id="csv">⬇ Exportar CSV</button><button class="btn small" id="salir">Cerrar sesión</button></div></div>
     <div class="kpis">
       <div class="kpi"><b style="color:var(--green)">${n}</b><span>Inscriptos (${reales} reales + ${n - reales} de ejemplo)</span></div>
       <div class="kpi"><b class="gold">${$money(total)}</b><span>Recaudación total</span></div>
@@ -471,13 +471,14 @@ function vistaAdmin() {
     <div class="table-wrap"><table><thead><tr><th>#</th><th class="l">Jugador</th><th class="l">Equipo</th><th>Estrellas</th><th>Inscripción</th><th>Plataforma</th><th>WhatsApp</th><th class="l">Horarios</th></tr></thead><tbody>
       ${conEq.map((x, i) => `<tr><td>${i + 1}</td><td class="l"><b>${x.nombre}</b>${x.demo ? ' <span class="badge">ejemplo</span>' : ""}</td><td class="l"><div class="team-cell">${crest(x.t)}${x.t.nombre}</div></td><td class="gold">${stars(x.t.estrellas)}</td><td class="pts">${$money(x.t.precio)}</td><td>${x.plataforma}</td><td>${x.whatsapp || "—"}</td><td class="l muted" style="white-space:normal;min-width:220px;font-size:12px">${resumenDisp(x.disp)}</td></tr>`).join("")}
     </tbody></table></div>
-    <div class="warn">Aviso: en esta versión el panel es visible para cualquiera que conozca la dirección. Cuando conectemos Supabase lo vamos a proteger para que solo entres vos como administrador.</div>
+    <div class="warn">Los datos de este panel todavía son de ejemplo. En el próximo paso las inscripciones se guardan en Supabase y solo el administrador puede leerlas.</div>
   </div>`;
 }
 function resumenDisp(disp) {
   return DIAS.map(d => { const ts = TURNOS.filter(tn => disp.includes(d + "|" + tn)); return ts.length ? `<b>${d.slice(0, 3)}</b> ${ts.map(t => t[0]).join("/")}` : ""; }).filter(Boolean).join(" · ");
 }
 function iniciarAdmin() {
+  const so = document.getElementById("salir"); if (so) so.addEventListener("click", cerrarSesion);
   const b = document.getElementById("csv"); if (!b) return;
   b.addEventListener("click", () => {
     const filas = [["Nombre", "ID consola", "WhatsApp", "Plataforma", "Equipo", "Estrellas", "Precio", "Horarios"]];
@@ -543,6 +544,71 @@ function iniciarReveal() {
 }
 
 // ============================================================
+//  LOGIN DE ADMINISTRADOR (Supabase Auth)
+//  La contraseña NO está en el código: vive en Supabase.
+// ============================================================
+let sb = null;
+if (window.supabase && typeof SUPABASE_URL !== "undefined" && SUPABASE_URL && !SUPABASE_URL.startsWith("PEGAR")) {
+  try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) { sb = null; }
+}
+let ES_ADMIN = false, ADMIN_EMAIL = "";
+
+async function verificarAdmin() {
+  ES_ADMIN = false; ADMIN_EMAIL = "";
+  if (!sb) return;
+  try {
+    const { data } = await sb.auth.getSession();
+    const user = data && data.session && data.session.user;
+    if (!user) return;
+    // Solo es admin si su email está en la tabla "admins"
+    const r = await sb.from("admins").select("email").eq("email", user.email).maybeSingle();
+    if (r.data) { ES_ADMIN = true; ADMIN_EMAIL = user.email; }
+  } catch (e) { ES_ADMIN = false; }
+}
+
+function vistaLogin() {
+  return `<div class="wrap fade"><div class="formbox" style="max-width:480px">
+    <span class="pill">Acceso restringido</span>
+    <h2 style="margin-top:12px">Ingreso <span class="grad">admin</span></h2>
+    <p class="muted" style="margin-top:8px">Solo para la organización de la liga.</p>
+    ${sb ? "" : `<div class="warn">Todavía falta conectar Supabase: completá el archivo <b>config.js</b> con la URL y la clave de tu proyecto. Hasta entonces el panel no se puede abrir.</div>`}
+    <form id="login">
+      <label class="lb">Email</label>
+      <input name="email" type="email" required autocomplete="username" placeholder="tu-email@gmail.com">
+      <label class="lb">Contraseña</label>
+      <input name="password" type="password" required autocomplete="current-password" placeholder="Tu contraseña">
+      <button class="btn primary" style="width:100%;margin-top:18px" type="submit" ${sb ? "" : "disabled"}>Entrar</button>
+      <button class="btn" style="width:100%;margin-top:10px;opacity:.5;cursor:not-allowed" type="button" disabled>Continuar con Google (próximamente)</button>
+      <div id="login-msg"></div>
+    </form></div></div>`;
+}
+
+function iniciarLogin() {
+  const f = document.getElementById("login"); if (!f) return;
+  f.addEventListener("submit", async e => {
+    e.preventDefault();
+    const out = document.getElementById("login-msg");
+    if (!sb) { out.innerHTML = `<div class="msg err">Supabase todavía no está conectado.</div>`; return; }
+    const d = Object.fromEntries(new FormData(f));
+    out.innerHTML = `<div class="msg">Verificando...</div>`;
+    const { error } = await sb.auth.signInWithPassword({ email: d.email.trim(), password: d.password });
+    if (error) { out.innerHTML = `<div class="msg err">Email o contraseña incorrectos.</div>`; return; }
+    await verificarAdmin();
+    if (!ES_ADMIN) {
+      await sb.auth.signOut();
+      out.innerHTML = `<div class="msg err">Esa cuenta no tiene permisos de administrador.</div>`; return;
+    }
+    location.hash = "#/admin"; render();
+  });
+}
+
+async function cerrarSesion() {
+  if (sb) { try { await sb.auth.signOut(); } catch (e) {} }
+  ES_ADMIN = false; ADMIN_EMAIL = "";
+  location.hash = "#/"; render();
+}
+
+// ============================================================
 //  ROUTER
 // ============================================================
 function render() {
@@ -558,13 +624,14 @@ function render() {
     case "jugadores": html = vistaJugadores(); break;
     case "jugador": html = vistaJugador(param); break;
     case "inscripcion": html = vistaInscripcion(); break;
-    case "admin": html = vistaAdmin(); break;
+    case "admin": html = ES_ADMIN ? vistaAdmin() : vistaLogin(); break;
+    case "login": html = ES_ADMIN ? vistaAdmin() : vistaLogin(); break;
     default: html = vistaInicio();
   }
   app.innerHTML = html;
   if (ruta === "inscripcion") iniciarInscripcion();
-  if (ruta === "admin") iniciarAdmin();
-  if (!ruta || !["ligas", "liga", "equipos", "jugadores", "jugador", "inscripcion", "admin"].includes(ruta)) { iniciarCarrusel(); iniciarCuentaRegresiva(); countUp(app.querySelector(".slide.active")); }
+  if (ruta === "admin" || ruta === "login") { if (ES_ADMIN) iniciarAdmin(); else iniciarLogin(); }
+  if (!ruta || !["ligas", "liga", "equipos", "jugadores", "jugador", "inscripcion", "admin", "login"].includes(ruta)) { iniciarCarrusel(); iniciarCuentaRegresiva(); countUp(app.querySelector(".slide.active")); }
   document.querySelectorAll("#menu a").forEach(a => a.classList.toggle("active", a.dataset.r === (ruta === "liga" ? "ligas" : ruta === "jugador" ? "jugadores" : ruta)));
   window.scrollTo(0, 0);
   iniciarReveal();
@@ -572,3 +639,5 @@ function render() {
 }
 window.addEventListener("hashchange", render);
 render();
+// Al cargar, revisamos si ya hay una sesión de administrador abierta
+verificarAdmin().then(() => { if (/^#\/(admin|login)/.test(location.hash)) render(); });
