@@ -551,10 +551,10 @@ let sb = null;
 if (window.supabase && typeof SUPABASE_URL !== "undefined" && SUPABASE_URL && !SUPABASE_URL.startsWith("PEGAR")) {
   try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) { sb = null; }
 }
-let ES_ADMIN = false, ADMIN_EMAIL = "";
+let ES_ADMIN = false, ADMIN_EMAIL = "", ADMIN_ERR = "";
 
 async function verificarAdmin() {
-  ES_ADMIN = false; ADMIN_EMAIL = "";
+  ES_ADMIN = false; ADMIN_EMAIL = ""; ADMIN_ERR = "";
   if (!sb) return;
   try {
     const { data } = await sb.auth.getSession();
@@ -562,8 +562,19 @@ async function verificarAdmin() {
     if (!user) return;
     // Solo es admin si su email está en la tabla "admins"
     const r = await sb.from("admins").select("email").eq("email", user.email).maybeSingle();
+    if (r.error) { ADMIN_ERR = r.error.message || "error desconocido"; return; }
     if (r.data) { ES_ADMIN = true; ADMIN_EMAIL = user.email; }
-  } catch (e) { ES_ADMIN = false; }
+  } catch (e) { ES_ADMIN = false; ADMIN_ERR = String(e && e.message || e); }
+}
+
+function explicarErrorLogin(err) {
+  const m = String(err && err.message || err || "").toLowerCase();
+  if (m.includes("invalid login credentials")) return "El email o la contraseña no coinciden con el usuario creado en Supabase. Revisá que escribas la misma contraseña que pusiste al crear el usuario.";
+  if (m.includes("email not confirmed")) return "El usuario existe pero no está confirmado. En Supabase andá a Authentication → Users, abrí el usuario y confirmalo (o borralo y crealo de nuevo tildando Auto Confirm User).";
+  if (m.includes("api key") || m.includes("apikey") || m.includes("jwt")) return "La clave de config.js es incorrecta. Volvé a copiar la anon public key.";
+  if (m.includes("failed to fetch") || m.includes("network") || m.includes("load failed")) return "No se pudo conectar con Supabase. Revisá la URL de config.js (tiene que empezar con https:// y terminar en .supabase.co).";
+  if (m.includes("rate limit") || m.includes("too many")) return "Demasiados intentos seguidos. Esperá unos minutos y probá de nuevo.";
+  return "Error de Supabase: " + (err && err.message ? err.message : err);
 }
 
 function vistaLogin() {
@@ -592,11 +603,14 @@ function iniciarLogin() {
     const d = Object.fromEntries(new FormData(f));
     out.innerHTML = `<div class="msg">Verificando...</div>`;
     const { error } = await sb.auth.signInWithPassword({ email: d.email.trim(), password: d.password });
-    if (error) { out.innerHTML = `<div class="msg err">Email o contraseña incorrectos.</div>`; return; }
+    if (error) { out.innerHTML = `<div class="msg err">${explicarErrorLogin(error)}</div>`; return; }
     await verificarAdmin();
     if (!ES_ADMIN) {
       await sb.auth.signOut();
-      out.innerHTML = `<div class="msg err">Esa cuenta no tiene permisos de administrador.</div>`; return;
+      out.innerHTML = ADMIN_ERR
+        ? `<div class="msg err">La contraseña es correcta, pero no se pudo verificar el permiso de administrador (${ADMIN_ERR}). Probablemente falta ejecutar el SQL de supabase-1-admin.sql en Supabase.</div>`
+        : `<div class="msg err">La contraseña es correcta, pero ese email no figura como administrador. Ejecutá el SQL de supabase-1-admin.sql, o revisá que el email sea exactamente el mismo.</div>`;
+      return;
     }
     location.hash = "#/admin"; render();
   });
