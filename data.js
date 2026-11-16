@@ -163,3 +163,31 @@ if (_q) { _q.equipoId = EQUIPOS.find(t => t.nombre === "Real Madrid").id; _q.lig
 
 // Cuántos inscriptos "reales" hay (en la versión 1 es de ejemplo)
 const META_INSCRIPTOS = 40;
+
+// Fecha de arranque de la temporada (cambiala por la real)
+const INICIO = "2026-12-07T20:00:00-03:00";
+
+// Disponibilidad horaria
+const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const TURNOS = ["Mañana", "Tarde", "Noche"];
+
+// Inscriptos de EJEMPLO para que el panel de administrador tenga datos.
+// Cuando conectemos Supabase, esto se reemplaza por los datos reales.
+const DEMO_INSCRIPTOS = (function () {
+  const r = rng(99);
+  const plat = ["PlayStation 5", "PlayStation 5", "PlayStation 4", "Xbox Series", "PC"];
+  const prob = { "Mañana": 0.12, "Tarde": 0.3, "Noche": 0.6 };
+  const out = [];
+  for (let i = 0; i < 17; i++) {
+    const t = EQUIPOS[Math.floor(r() * EQUIPOS.length)];
+    const disp = [];
+    DIAS.forEach(d => TURNOS.forEach(tn => { if (r() < prob[tn]) disp.push(d + "|" + tn); }));
+    if (!disp.length) disp.push("Viernes|Noche");
+    out.push({
+      nombre: NOMBRES_DEMO[i + 1], gamertag: NOMBRES_DEMO[i + 1], whatsapp: "",
+      plataforma: plat[Math.floor(r() * plat.length)], equipoId: t.id, disp,
+      ts: Date.now() - Math.floor(r() * 7) * 86400000
+    });
+  }
+  return out;
+})();
