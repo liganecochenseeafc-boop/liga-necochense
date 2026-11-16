@@ -5,12 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Liga Necochense EA FC 27</title>
   <meta name="description" content="La liga de EA FC 27 de Necochea. Inscribite, elegí tu equipo y competí por $1.000.000.">
+  <meta name="theme-color" content="#070b14">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2300ff87'/%3E%3Ctext x='32' y='44' font-size='34' font-weight='800' text-anchor='middle' fill='%2304101f' font-family='Arial'%3ELN%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div class="ticker" aria-hidden="true">
+    <div class="track">
+      <span>● INSCRIPCIONES ABIERTAS</span><span>PREMIO AL CAMPEÓN $1.000.000</span><span>5 LIGAS · A A LA E</span><span>EA FC 27 · NECOCHEA</span><span>ELEGÍ TU EQUIPO</span><span>ESTADÍSTICAS COMPLETAS</span>
+      <span>● INSCRIPCIONES ABIERTAS</span><span>PREMIO AL CAMPEÓN $1.000.000</span><span>5 LIGAS · A A LA E</span><span>EA FC 27 · NECOCHEA</span><span>ELEGÍ TU EQUIPO</span><span>ESTADÍSTICAS COMPLETAS</span>
+    </div>
+  </div>
+
   <header class="nav">
     <a class="brand" href="#/">
       <span class="brand-badge">LN</span>
@@ -28,8 +37,21 @@
   <main id="app"></main>
 
   <footer class="footer">
-    <p><strong>Liga Necochense EA FC 27</strong> · Necochea, Buenos Aires</p>
-    <p class="muted">Sitio no oficial. EA SPORTS FC es marca de Electronic Arts. Los escudos son ilustrativos.</p>
+    <div class="wrap foot-grid">
+      <div>
+        <div class="brand"><span class="brand-badge">LN</span><span class="brand-text">LIGA NECOCHENSE<small>EA FC 27</small></span></div>
+        <p class="muted" style="margin-top:12px;max-width:320px">La competencia online de EA FC 27 hecha en Necochea, para jugadores de Necochea.</p>
+      </div>
+      <div>
+        <h4>Navegar</h4>
+        <a href="#/ligas">Ligas</a><a href="#/equipos">Equipos</a><a href="#/jugadores">Jugadores</a><a href="#/inscripcion">Inscripción</a>
+      </div>
+      <div>
+        <h4>Organización</h4>
+        <a href="#/admin">Panel de administrador</a>
+      </div>
+    </div>
+    <p class="muted legal">Sitio no oficial, sin relación con EA ni con ningún club. EA SPORTS FC es marca de Electronic Arts. Los escudos y el jugador son ilustraciones propias.</p>
   </footer>
 
   <script src="data.js"></script>
