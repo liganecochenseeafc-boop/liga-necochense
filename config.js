@@ -7,4 +7,4 @@
 //  GitHub sin problema. NUNCA pegues acá la "service_role key".
 // ============================================================
 const SUPABASE_URL = "https://ipeaopxokuopszmaqeme.supabase.co/rest/v1/";
-const SUPABASE_ANON_KEY = "sb_publishable_K1pMV6_QWdAPUXB1XBF6zg_98jHSAoe";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlwZWFvcHhva3VvcHN6bWFxZW1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ4MDQwMjgsImV4cCI6MjExMDM4MDAyOH0.arSvFUipXo6awtiVvpicrY_45xNtI7-153_wpA0An6w";
