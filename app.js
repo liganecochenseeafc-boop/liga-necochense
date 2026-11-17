@@ -5,8 +5,22 @@
 const app = document.getElementById("app");
 const $money = n => "$" + Math.round(Number(n)).toLocaleString("es-AR");
 const stars = n => "★".repeat(Math.floor(n)) + (n % 1 ? "½" : "");
-const teamById = id => EQUIPOS.find(t => t.id === id);
+const EQUIPO_DESCONOCIDO = { id: 0, nombre: "Sin equipo", estrellas: 0, c1: "#33415f", c2: "#111a33", precio: 0, iniciales: "?" };
+const teamById = id => EQUIPOS.find(t => t.id === id) || EQUIPO_DESCONOCIDO;
 const teamByName = n => EQUIPOS.find(t => t.nombre === n);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// Datos que usan las vistas. En modo demo son de ejemplo; con Supabase conectado
+// panel.js los reemplaza por los datos reales (LIVE = true).
+let KEEP_SCROLL = false;
+let LIVE = false;
+let JUGADORES = PARTICIPANTES;
+let PARTIDOS = [...PARTIDOS_DEMO, ...PARTIDOS_PROG_DEMO];
+let LIVE_INSCRIPTOS = [];
+let EQUIPOS_OCUPADOS = new Set();
+const EJEMPLO = _q; // QuichaProPlayer, el jugador de ejemplo de la portada
+const jugadorOr = id => jugadorById(id) || { id, nombre: "Jugador retirado", equipoId: 0, liga: "", plataforma: "" };
+const esJugado = m => !!(m && m.ft);
 function isLight(hex) {
   const h = hex.replace("#", ""); const r = parseInt(h.substr(0, 2), 16), g = parseInt(h.substr(2, 2), 16), b = parseInt(h.substr(4, 2), 16);
   return (r * 299 + g * 587 + b * 114) / 1000 > 170;
@@ -21,10 +35,13 @@ function clearTimers() { TIMERS.forEach(t => clearInterval(t)); TIMERS = []; }
 function getInscriptos() { try { return JSON.parse(localStorage.getItem("inscriptos") || "[]"); } catch (e) { return []; } }
 function addInscripto(x) { const a = getInscriptos(); a.push(x); try { localStorage.setItem("inscriptos", JSON.stringify(a)); } catch (e) {} }
 function todasInscripciones() {
+  if (LIVE) return LIVE_INSCRIPTOS;
   return [...DEMO_INSCRIPTOS.map(x => ({ ...x, demo: true })), ...getInscriptos().map(x => ({ ...x, demo: false }))];
 }
+// Cantidad de inscriptos que se muestra al público (sin contar las rechazadas)
+function totalInscriptos() { return todasInscripciones().filter(x => x.estado !== "rechazada").length; }
 function tablaLiga(id) {
-  return PARTICIPANTES.filter(p => p.liga === id).sort((a, b) => b.pts - a.pts || b.dg - a.dg || b.gf - a.gf);
+  return JUGADORES.filter(p => p.liga === id).sort((a, b) => b.pts - a.pts || b.dg - a.dg || b.gf - a.gf);
 }
 
 // ---------- Ilustraciones propias (SVG) ----------
@@ -89,23 +106,24 @@ function resultadoPara(m, id) {
   const soyA = m.a === id, mi = soyA ? m.ft.a.goles : m.ft.b.goles, su = soyA ? m.ft.b.goles : m.ft.a.goles;
   return { rival: soyA ? m.b : m.a, mi, su, r: mi > su ? "G" : mi === su ? "E" : "P" };
 }
-const jugadorById = id => PARTICIPANTES.find(x => x.id === id);
+const jugadorById = id => JUGADORES.find(x => x.id === id);
 function scorebug(m) {
-  const A = jugadorById(m.a), B = jugadorById(m.b), tA = teamById(A.equipoId), tB = teamById(B.equipoId);
+  const A = jugadorOr(m.a), B = jugadorOr(m.b), tA = teamById(A.equipoId), tB = teamById(B.equipoId);
   return `<a class="scorebug" href="#/partido/${m.id}"><span class="sb-tag">LIGA ${m.liga} · FECHA ${m.jornada}</span>
-    <div class="sb-team">${crest(tA)}<div><b>${A.nombre}</b><small>${tA.nombre}</small></div></div>
+    <div class="sb-team">${crest(tA)}<div><b>${esc(A.nombre)}</b><small>${tA.nombre}</small></div></div>
     <div class="sb-score"><b>${m.ft.a.goles}</b><i>-</i><b>${m.ft.b.goles}</b></div>
-    <div class="sb-team r">${crest(tB)}<div><b>${B.nombre}</b><small>${tB.nombre}</small></div></div>
-    <div class="sb-ver">Entretiempo ${m.ht.a.goles}-${m.ht.b.goles} · Ver estadísticas →</div></a>`;
+    <div class="sb-team r">${crest(tB)}<div><b>${esc(B.nombre)}</b><small>${tB.nombre}</small></div></div>
+    <div class="sb-ver">${m.ht ? `Entretiempo ${m.ht.a.goles}-${m.ht.b.goles} · ` : ""}Ver estadísticas →</div></a>`;
 }
+const fechaCorta = iso => iso ? new Date(iso).toLocaleString("es-AR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "A coordinar";
 
 // ============================================================
 //  VISTAS
 // ============================================================
 function slidesHTML() {
-  const insc = todasInscripciones().length;
+  const insc = totalInscriptos();
   const rm = teamByName("Real Madrid");
-  const q = jugadorById("quichaproplayer");
+  const q = EJEMPLO;
   const cloud = [
     ["Real Madrid", "left:6%;top:4%;width:120px;height:120px;font-size:44px;animation-delay:-1s"],
     ["Manchester City", "left:50%;top:0;width:96px;height:96px;font-size:36px;animation-delay:-3s"],
@@ -116,7 +134,8 @@ function slidesHTML() {
   ].map(([n, st]) => { const t = teamByName(n); return `<span>${crest(t, "", "position:absolute;border-radius:24px;" + st)}</span>`; }).join("");
   const tiers = [[3, "Hasta 3★", "Equipos chicos"], [4, "3.5 a 4★", "Equipos medios"], [4.5, "4.5★", "Equipos top"], [5, "5★", "Los mejores del juego"]]
     .map(([s2, t, d]) => `<div class="t"><span class="s">${stars(s2)}</span><b>${$money(precioPorEstrellas(s2))}</b><small>${t} · ${d}</small></div>`).join("");
-  const lig = LIGAS.map(l => { const lead = tablaLiga(l.id)[0]; return `<a class="league-row" style="--c:${l.color}" href="#/liga/${l.id}"><span class="L" style="background:${l.color}">${l.id}</span><div><b>${l.nombre}</b><small>Líder: ${lead.nombre}</small></div><span class="r">${lead.pts} pts</span></a>`; }).join("");
+  const lig = LIGAS.map(l => { const tb = tablaLiga(l.id), lead = tb[0];
+    return `<a class="league-row" style="--c:${l.color}" href="#/liga/${l.id}"><span class="L" style="background:${l.color}">${l.id}</span><div><b>${l.nombre}</b><small>${lead ? "Líder: " + esc(lead.nombre) : "Sin jugadores todavía"}</small></div><span class="r">${lead ? lead.pts + " pts" : tb.length + " jug."}</span></a>`; }).join("");
 
   return `
   <div class="slide s1 active">${faroSVG()}<div class="wrap grid">
@@ -157,7 +176,10 @@ function slidesHTML() {
         <div><b data-count="${q.gf}">${q.gf}</b><span>Goles a favor</span></div><div><b data-count="${q.gc}">${q.gc}</b><span>Goles en contra</span></div>
         <div><b data-count="${q.posesion}" data-suf="%">${q.posesion}%</b><span>Posesión</span></div><div><b data-count="${q.precision}" data-suf="%">${q.precision}%</b><span>Precisión de pases</span></div>
       </div>
-      <div class="btns reveal-in"><a class="btn primary" href="#/jugador/quichaproplayer">Ver perfil</a><a class="btn" href="#/partido/p10">Ver una ficha de partido</a></div>
+      <div class="btns reveal-in">${LIVE
+        ? `<a class="btn primary" href="#/ligas">Ver las ligas</a><a class="btn" href="#/inscripcion">Quiero participar</a>`
+        : `<a class="btn primary" href="#/jugador/quichaproplayer">Ver perfil</a><a class="btn" href="#/partido/p10">Ver una ficha de partido</a>`}</div>
+      ${LIVE ? `<p class="muted" style="margin-top:12px;font-size:13px">* La carta y los números de esta diapositiva son de un jugador de ejemplo.</p>` : ""}
     </div>
     <div class="stage" style="place-items:center">
       <div class="fcard">
@@ -181,9 +203,10 @@ function slidesHTML() {
 }
 
 function vistaInicio() {
-  const insc = todasInscripciones().length;
+  const insc = totalInscriptos();
   const pct = Math.min(100, Math.round(insc / META_INSCRIPTOS * 100));
-  const goleadores = [...PARTICIPANTES].sort((a, b) => b.gf - a.gf).slice(0, 5);
+  const goleadores = [...JUGADORES].filter(p => p.liga).sort((a, b) => b.gf - a.gf).slice(0, 5);
+  const jugados = PARTIDOS.filter(esJugado).slice(0, 4);
   return `
   <div class="carousel" id="carousel">
     ${slidesHTML()}
@@ -207,8 +230,9 @@ function vistaInicio() {
 
   <section class="block reveal"><div class="wrap">
     <div class="sec-title"><h2>Últimos <em>resultados</em></h2><a href="#/liga/A">Ver Liga A →</a></div>
-    <div class="sbs">${PARTIDOS_DEMO.slice(0, 4).map(scorebug).join("")}</div>
-    <p class="muted" style="margin-top:10px;font-size:13px">* Resultados de ejemplo. Entrá a cada partido para ver el entretiempo y el final.</p>
+    ${jugados.length
+      ? `<div class="sbs">${jugados.map(scorebug).join("")}</div>${LIVE ? "" : `<p class="muted" style="margin-top:10px;font-size:13px">* Resultados de ejemplo. Entrá a cada partido para ver el entretiempo y el final.</p>`}`
+      : `<div class="card"><p class="muted">Todavía no se jugó ningún partido. Los resultados van a aparecer acá apenas arranque la temporada.</p></div>`}
   </div></section>
 
   <section class="block reveal"><div class="wrap">
@@ -240,12 +264,12 @@ function vistaInicio() {
 
   <section class="block reveal"><div class="wrap">
     <div class="sec-title"><h2>Máximos <em>goleadores</em></h2></div>
-    <div class="table-wrap"><table><thead><tr><th>#</th><th class="l">Jugador</th><th class="l">Equipo</th><th>Liga</th><th>Goles a favor</th></tr></thead><tbody>
+    ${goleadores.length ? `<div class="table-wrap"><table><thead><tr><th>#</th><th class="l">Jugador</th><th class="l">Equipo</th><th>Liga</th><th>Goles a favor</th></tr></thead><tbody>
       ${goleadores.map((p, i) => { const t = teamById(p.equipoId); return `<tr class="${i === 0 ? "top" : ""}"><td><span class="pos">${i + 1}</span></td>
-        <td class="l"><a href="#/jugador/${p.id}"><b>${p.nombre}</b></a></td><td class="l"><div class="team-cell">${crest(t)}${t.nombre}</div></td>
+        <td class="l"><a href="#/jugador/${p.id}"><b>${esc(p.nombre)}</b></a></td><td class="l"><div class="team-cell">${crest(t)}${t.nombre}</div></td>
         <td>${p.liga}</td><td class="pts">${p.gf}</td></tr>`; }).join("")}
-    </tbody></table></div>
-    <p class="muted" style="margin-top:10px;font-size:13px">* Datos de ejemplo hasta que arranque la temporada.</p>
+    </tbody></table></div>${LIVE ? "" : `<p class="muted" style="margin-top:10px;font-size:13px">* Datos de ejemplo hasta que arranque la temporada.</p>`}`
+      : `<div class="card"><p class="muted">Todavía no hay jugadores en las ligas.</p></div>`}
   </div></section>
 
   <section class="block reveal"><div class="wrap">
@@ -257,16 +281,21 @@ function vistaInicio() {
 function vistaLigas() {
   return `<div class="wrap fade" style="padding-top:40px"><div class="sec-title"><h2>Las 5 <em>ligas</em></h2></div>
   <div class="cards">${LIGAS.map(l => {
-    const t = tablaLiga(l.id)[0];
+    const tb = tablaLiga(l.id), t = tb[0];
     return `<a class="card hover league-card" href="#/liga/${l.id}" style="border-top:3px solid ${l.color}">
       <span class="big">${l.id}</span><h3>${l.nombre}</h3><p class="muted">${l.desc}</p>
-      <p style="margin-top:12px" class="muted">Líder: <b style="color:var(--txt)">${t.nombre}</b> (${t.pts} pts)</p></a>`; }).join("")}</div></div>`;
+      <p style="margin-top:12px" class="muted">${t ? `Líder: <b style="color:var(--txt)">${esc(t.nombre)}</b> (${t.pts} pts)` : "Todavía sin jugadores"} · ${tb.length} jugadores</p></a>`; }).join("")}</div></div>`;
 }
 
 function vistaLiga(id, modo) {
   const liga = LIGAS.find(l => l.id === id) || LIGAS[0];
   const stats = modo === "stats";
   const tabla = tablaLiga(liga.id);
+  if (!tabla.length) {
+    return `<div class="wrap fade" style="padding-top:40px"><div class="sec-title"><h2>${liga.nombre} · <em>Posiciones</em></h2></div>
+      <div class="tabs">${LIGAS.map(l => `<a class="tab ${l.id === liga.id ? "active" : ""}" href="#/liga/${l.id}">${l.nombre}</a>`).join("")}</div>
+      <div class="card"><p class="muted">Todavía no hay jugadores en esta liga. Cuando el organizador los asigne, van a aparecer acá.</p><div class="btns"><a class="btn primary" href="#/inscripcion">Quiero participar</a></div></div></div>`;
+  }
   const pod = [tabla[1], tabla[0], tabla[2]];
   const cls = ["p2", "p1", "p3"], nums = ["2º", "1º", "3º"];
   const best = (fn, asc) => [...tabla].sort((a, b) => asc ? fn(a) - fn(b) : fn(b) - fn(a))[0];
@@ -276,8 +305,8 @@ function vistaLiga(id, modo) {
     ["Más posesión", best(p => p.posesion), p => p.posesion + "%"],
     ["Mejor pase", best(p => p.precision), p => p.precision + "% de pases"],
     ["Más tiros", best(p => p.tiros), p => p.tiros + " tiros"],
-  ].map(([t, p, f]) => `<a class="leader" href="#/jugador/${p.id}"><small>${t}</small><b>${f(p)}</b><span>${p.nombre}</span></a>`).join("");
-  const partidos = PARTIDOS_DEMO.filter(m => m.liga === liga.id);
+  ].map(([t, p, f]) => `<a class="leader" href="#/jugador/${p.id}"><small>${t}</small><b>${f(p)}</b><span>${esc(p.nombre)}</span></a>`).join("");
+  const partidos = PARTIDOS.filter(m => m.liga === liga.id && esJugado(m));
   const cabeza = stats
     ? `<th>#</th><th class="l">Jugador</th><th>PJ</th><th>Tiros</th><th>Al arco</th><th>Pases</th><th>Pas %</th><th>Entradas</th><th>Faltas</th><th>Offs.</th><th>Córners</th><th>Amar.</th><th>Rojas</th><th>Atajadas</th>`
     : `<th>#</th><th class="l">Jugador</th><th class="l">Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pos %</th><th>Pas %</th><th>Forma</th><th>Pts</th>`;
@@ -298,7 +327,7 @@ function vistaLiga(id, modo) {
     <div class="leaders">${L}</div>
     <div class="seg"><a class="${stats ? "" : "on"}" href="#/liga/${liga.id}">Posiciones</a><a class="${stats ? "on" : ""}" href="#/liga/${liga.id}/stats">Estadísticas</a></div>
     <div class="table-wrap"><table><thead><tr>${cabeza}</tr></thead><tbody>${filas}</tbody></table></div>
-    <p class="muted" style="margin-top:10px;font-size:13px">${stats ? "Acumulado de la temporada, con los datos que muestra el juego al final de cada partido." : "Dorado: zona de ascenso · Rojo: zona de descenso."} Datos de ejemplo.</p>
+    <p class="muted" style="margin-top:10px;font-size:13px">${stats ? "Acumulado de la temporada, con los datos que muestra el juego al final de cada partido." : "Dorado: zona de ascenso · Rojo: zona de descenso."}${LIVE ? "" : " Datos de ejemplo."}</p>
     ${partidos.length ? `<div class="sec-title" style="margin-top:36px"><h2>Últimos <em>partidos</em></h2></div><div class="sbs">${partidos.map(scorebug).join("")}</div>` : ""}
   </div>`;
 }
@@ -314,14 +343,15 @@ function vistaEquipos() {
 }
 
 function vistaJugadores() {
-  const lista = [...PARTICIPANTES].sort((a, b) => b.pts - a.pts);
+  const lista = [...JUGADORES].sort((a, b) => b.pts - a.pts);
   return `<div class="wrap fade" style="padding-top:40px"><div class="sec-title"><h2><em>Jugadores</em></h2></div>
-  <div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">${lista.map(p => { const t = teamById(p.equipoId);
-    return `<a class="card hover" href="#/jugador/${p.id}" style="display:flex;gap:12px;align-items:center">${crest(t)}<div><b>${p.nombre}</b><div class="muted" style="font-size:13px">${t.nombre} · Liga ${p.liga}</div></div></a>`; }).join("")}</div></div>`;
+  ${lista.length ? `<div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">${lista.map(p => { const t = teamById(p.equipoId);
+    return `<a class="card hover" href="#/jugador/${p.id}" style="display:flex;gap:12px;align-items:center">${crest(t)}<div><b>${esc(p.nombre)}</b><div class="muted" style="font-size:13px">${t.nombre} · ${p.liga ? "Liga " + p.liga : "Sin liga"}</div></div></a>`; }).join("")}</div>`
+    : `<div class="card"><p class="muted">Todavía no hay jugadores aprobados. ¡Sé el primero!</p><div class="btns"><a class="btn primary" href="#/inscripcion">Quiero participar</a></div></div>`}</div>`;
 }
 
 function bar(label, val, max = 100, sufijo = "") {
-  return `<div class="bar-row"><div class="top"><span>${label}</span><b>${val}${sufijo}</b></div><div class="bar"><i data-w="${Math.min(100, val / max * 100)}"></i></div></div>`;
+  return `<div class="bar-row"><div class="top"><span>${label}</span><b>${val}${sufijo}</b></div><div class="bar"><i data-w="${Math.min(100, val / (max || 1) * 100)}"></i></div></div>`;
 }
 
 // Radar de 6 ejes calculado con las estadísticas del juego
@@ -338,30 +368,22 @@ function radarSVG(vals) {
     <polygon points="${poly}" fill="rgba(255,197,49,.25)" stroke="#ffc531" stroke-width="2.5" stroke-linejoin="round"/>${puntos}${ejes}</svg>`;
 }
 
-function vistaJugador(id) {
-  const p = jugadorById(id);
-  if (!p) return `<div class="wrap" style="padding:80px 20px"><h2>Jugador no encontrado</h2><a class="btn" href="#/jugadores">Volver</a></div>`;
-  const t = teamById(p.equipoId);
-  const pj = p.pj;
+// Totales, radar y promedios de un jugador (se usa en el perfil público y en el panel del jugador)
+function perfilStats(p) {
+  const pj = p.pj || 0, d = pj || 1;
   const clamp = v => Math.max(0, Math.min(100, Math.round(v)));
   const radar = [
-    ["Ataque", clamp(p.gf / pj / 3.5 * 100)], ["Defensa", clamp(100 - p.gc / pj / 3 * 100)], ["Posesión", clamp(p.posesion)],
-    ["Pase", clamp(p.precision)], ["Puntería", clamp(p.tirosArco / p.tiros * 100)], ["Juego limpio", clamp(100 - (p.faltas / pj * 9 + p.amarillas * 4 + p.rojas * 20))],
+    ["Ataque", clamp(p.gf / d / 3.5 * 100)], ["Defensa", pj ? clamp(100 - p.gc / d / 3 * 100) : 0], ["Posesión", clamp(p.posesion)],
+    ["Pase", clamp(p.precision)], ["Puntería", p.tiros ? clamp(p.tirosArco / p.tiros * 100) : 0], ["Juego limpio", pj ? clamp(100 - (p.faltas / d * 9 + p.amarillas * 4 + p.rojas * 20)) : 0],
   ];
-  const ms = PARTIDOS_DEMO.filter(m => m.a === id || m.b === id);
-  return `<div class="wrap fade">
-    <div class="profile-head">${crest(t, "lg")}
-      <div><span class="pill">Liga ${p.liga}</span><h1 style="margin-top:8px">${p.nombre}</h1>
-        <div class="badges"><span class="badge y">${t.nombre} ${stars(t.estrellas)}</span><span class="badge">${p.plataforma}</span><span class="badge">${p.ciudad}</span>${p.racha ? `<span class="badge g">${p.racha}</span>` : ""}<span class="badge">Desde ${p.desde}</span></div></div>
-      <div class="ovr"><b>${p.pts}</b><span>PUNTOS</span></div></div>
-
+  return `
     <div class="kpis">
       <div class="kpi"><b>${p.pj}</b><span>Jugados</span></div><div class="kpi"><b style="color:var(--win)">${p.g}</b><span>Ganados</span></div>
       <div class="kpi"><b>${p.e}</b><span>Empatados</span></div><div class="kpi"><b style="color:var(--red)">${p.p}</b><span>Perdidos</span></div>
       <div class="kpi"><b class="accent">${p.gf}</b><span>Goles a favor</span></div><div class="kpi"><b>${p.gc}</b><span>Goles en contra</span></div>
       <div class="kpi"><b>${p.dg > 0 ? "+" : ""}${p.dg}</b><span>Diferencia</span></div><div class="kpi"><b>${pm(p.gf, pj)}</b><span>Goles por partido</span></div>
     </div>
-
+    ${pj ? "" : `<p class="muted" style="margin:12px 0 0">Todavía no jugó partidos: las estadísticas se van a completar apenas se carguen los resultados.</p>`}
     <div class="pgrid" style="margin-top:16px">
       <div class="card"><h3 class="sub">Perfil de juego</h3><div class="radar-wrap">${radarSVG(radar)}</div></div>
       <div class="card"><h3 class="sub">Ataque y posesión</h3>
@@ -371,41 +393,63 @@ function vistaJugador(id) {
         <div class="kpis"><div class="kpi"><b>${p.gc}</b><span>Goles en contra</span></div><div class="kpi"><b>${p.atajadas}</b><span>Atajadas</span></div><div class="kpi"><b>${p.entradas}</b><span>Entradas</span></div><div class="kpi"><b>${p.faltas}</b><span>Faltas</span></div><div class="kpi"><b class="accent">${p.amarillas}</b><span>Amarillas</span></div><div class="kpi"><b style="color:var(--red)">${p.rojas}</b><span>Rojas</span></div></div></div>
       <div class="card"><h3 class="sub">Promedio por partido</h3>
         <div class="kpis"><div class="kpi"><b>${pm(p.gf, pj)}</b><span>Goles a favor</span></div><div class="kpi"><b>${pm(p.gc, pj)}</b><span>Goles en contra</span></div><div class="kpi"><b>${pm(p.tiros, pj)}</b><span>Tiros</span></div><div class="kpi"><b>${pm(p.pases, pj)}</b><span>Pases</span></div><div class="kpi"><b>${pm(p.faltas, pj)}</b><span>Faltas</span></div><div class="kpi"><b>${pm(p.corners, pj)}</b><span>Córners</span></div></div></div>
-    </div>
+    </div>`;
+}
 
+// Tabla de partidos jugados de un jugador
+function perfilPartidos(id) {
+  const ms = PARTIDOS.filter(m => esJugado(m) && (m.a === id || m.b === id));
+  return ms.length ? `<div class="table-wrap"><table><thead><tr><th>Fecha</th><th class="l">Rival</th><th>Resultado</th><th></th><th>Entretiempo</th><th></th></tr></thead><tbody>
+      ${ms.map(m => { const r = resultadoPara(m, id), soyA = m.a === id, h = m.ht ? (soyA ? [m.ht.a.goles, m.ht.b.goles] : [m.ht.b.goles, m.ht.a.goles]) : null;
+        return `<tr><td>${m.jornada}</td><td class="l"><a href="#/jugador/${r.rival}"><b>${esc(jugadorOr(r.rival).nombre)}</b></a></td><td class="pts">${r.mi} - ${r.su}</td><td><div class="form"><i class="${r.r}">${r.r}</i></div></td><td>${h ? h[0] + " - " + h[1] : "—"}</td><td><a class="accent" href="#/partido/${m.id}">Ver ficha →</a></td></tr>`; }).join("")}
+    </tbody></table></div>` : `<p class="muted">Todavía no hay partidos cargados para este jugador.</p>`;
+}
+
+function vistaJugador(id) {
+  const p = jugadorById(id);
+  if (!p) return `<div class="wrap" style="padding:80px 20px"><h2>Jugador no encontrado</h2><a class="btn" href="#/jugadores">Volver</a></div>`;
+  const t = teamById(p.equipoId);
+  return `<div class="wrap fade">
+    <div class="profile-head">${crest(t, "lg")}
+      <div><span class="pill">${p.liga ? "Liga " + p.liga : "Sin liga asignada"}</span><h1 style="margin-top:8px">${esc(p.nombre)}</h1>
+        <div class="badges"><span class="badge y">${t.nombre} ${stars(t.estrellas)}</span><span class="badge">${esc(p.plataforma)}</span><span class="badge">${p.ciudad}</span>${p.racha ? `<span class="badge g">${p.racha}</span>` : ""}<span class="badge">Desde ${p.desde}</span></div></div>
+      <div class="ovr"><b>${p.pts}</b><span>PUNTOS</span></div></div>
+    ${perfilStats(p)}
     <h3 class="sub" style="margin-top:26px">Últimos partidos</h3>
-    ${ms.length ? `<div class="table-wrap"><table><thead><tr><th>Fecha</th><th class="l">Rival</th><th>Resultado</th><th></th><th>Entretiempo</th><th></th></tr></thead><tbody>
-      ${ms.map(m => { const r = resultadoPara(m, id), soyA = m.a === id, h = soyA ? [m.ht.a.goles, m.ht.b.goles] : [m.ht.b.goles, m.ht.a.goles];
-        return `<tr><td>${m.jornada}</td><td class="l"><a href="#/jugador/${r.rival}"><b>${jugadorById(r.rival).nombre}</b></a></td><td class="pts">${r.mi} - ${r.su}</td><td><div class="form"><i class="${r.r}">${r.r}</i></div></td><td>${h[0]} - ${h[1]}</td><td><a class="accent" href="#/partido/${m.id}">Ver ficha →</a></td></tr>`; }).join("")}
-    </tbody></table></div>` : `<p class="muted">Todavía no hay partidos cargados para este jugador.</p>`}
-    <p class="muted" style="margin:12px 0 0;font-size:13px">* Perfil de ejemplo con datos ficticios.</p></div>`;
+    ${perfilPartidos(id)}
+    ${LIVE ? "" : `<p class="muted" style="margin:12px 0 0;font-size:13px">* Perfil de ejemplo con datos ficticios.</p>`}</div>`;
 }
 
 // ---------- FICHA DE PARTIDO (entretiempo y final) ----------
 function vistaPartido(id, modo) {
-  const m = PARTIDOS_DEMO.find(x => x.id === id);
+  const m = PARTIDOS.find(x => x.id === id);
   if (!m) return `<div class="wrap" style="padding:80px 20px"><h2>Partido no encontrado</h2><a class="btn" href="#/liga/A">Volver</a></div>`;
-  const ht = modo === "ht", S = ht ? m.ht : m.ft;
-  const A = jugadorById(m.a), B = jugadorById(m.b), tA = teamById(A.equipoId), tB = teamById(B.equipoId);
+  const A = jugadorOr(m.a), B = jugadorOr(m.b), tA = teamById(A.equipoId), tB = teamById(B.equipoId);
+  const cabecera = (centro) => `<div class="mhead">
+      <a class="tm" href="#/jugador/${A.id}">${crest(tA, "lg")}<b>${esc(A.nombre)}</b><small>${tA.nombre}</small></a>
+      ${centro}
+      <a class="tm" href="#/jugador/${B.id}">${crest(tB, "lg")}<b>${esc(B.nombre)}</b><small>${tB.nombre}</small></a></div>`;
+  if (!esJugado(m)) {
+    return `<div class="wrap fade">${cabecera(`<div class="res"><div class="sc"><b>vs</b></div><small>Programado · Liga ${m.liga} · Fecha ${m.jornada}</small></div>`)}
+      <div class="card" style="max-width:820px;margin:0 auto;text-align:center"><p class="muted">Este partido todavía no se jugó.</p><p style="margin-top:6px"><b>${fechaCorta(m.fecha)}</b></p></div>
+      <div style="text-align:center;margin-top:14px"><a class="btn small" href="#/liga/${m.liga}">← Volver a la Liga ${m.liga}</a></div></div>`;
+  }
+  const ht = modo === "ht" && !!m.ht, S = ht ? m.ht : m.ft;
   // [campo, etiqueta, sufijo, "menos es mejor"]
   const filas = [["pos", "Posesión", "%"], ["tiros", "Tiros"], ["tirosArco", "Tiros al arco"], ["pases", "Pases"], ["precision", "Precisión de pases", "%"],
     ["entradas", "Entradas"], ["faltas", "Faltas", "", 1], ["offsides", "Offsides", "", 1], ["corners", "Córners"], ["amarillas", "Tarjetas amarillas", "", 1], ["rojas", "Tarjetas rojas", "", 1], ["atajadas", "Atajadas"]];
   const rows = filas.map(([k, et, suf = "", menos]) => {
-    const a = S.a[k], b = S.b[k], tot = (a + b) || 1;
+    const a = S.a[k] || 0, b = S.b[k] || 0, tot = (a + b) || 1;
     const gana = a === b ? 0 : (menos ? (a < b ? 1 : 2) : (a > b ? 1 : 2));
     return `<div class="mrow"><div class="v ${gana === 1 ? "w" : ""}">${a}${suf}</div>
       <div><div class="mc">${et}</div><div class="bars"><div class="half l"><i class="${gana === 1 ? "w" : ""}" style="width:${a / tot * 100}%"></i></div><div class="half"><i class="${gana === 2 ? "w" : ""}" style="width:${b / tot * 100}%"></i></div></div></div>
       <div class="v ${gana === 2 ? "w" : ""}">${b}${suf}</div></div>`; }).join("");
   const base = `#/partido/${m.id}`;
   return `<div class="wrap fade">
-    <div class="mhead">
-      <a class="tm" href="#/jugador/${A.id}">${crest(tA, "lg")}<b>${A.nombre}</b><small>${tA.nombre}</small></a>
-      <div class="res"><div class="sc"><b>${S.a.goles}</b><i>-</i><b>${S.b.goles}</b></div><small>${ht ? "Entretiempo" : "Final"} · Liga ${m.liga} · Fecha ${m.jornada}</small></div>
-      <a class="tm" href="#/jugador/${B.id}">${crest(tB, "lg")}<b>${B.nombre}</b><small>${tB.nombre}</small></a>
-    </div>
-    <div style="text-align:center"><div class="seg"><a class="${ht ? "" : "on"}" href="${base}">Final</a><a class="${ht ? "on" : ""}" href="${base}/ht">Entretiempo</a></div></div>
+    ${cabecera(`<div class="res"><div class="sc"><b>${S.a.goles}</b><i>-</i><b>${S.b.goles}</b></div><small>${ht ? "Entretiempo" : "Final"} · Liga ${m.liga} · Fecha ${m.jornada}</small></div>`)}
+    ${m.ht ? `<div style="text-align:center"><div class="seg"><a class="${ht ? "" : "on"}" href="${base}">Final</a><a class="${ht ? "on" : ""}" href="${base}/ht">Entretiempo</a></div></div>` : ""}
     <div class="card" style="max-width:820px;margin:0 auto">${rows}</div>
-    <p class="muted" style="text-align:center;margin-top:12px;font-size:13px">Estadísticas como las muestra el juego. Partido de ejemplo con datos ficticios.</p>
+    <p class="muted" style="text-align:center;margin-top:12px;font-size:13px">Estadísticas como las muestra el juego.${LIVE ? "" : " Partido de ejemplo con datos ficticios."}</p>
     <div style="text-align:center;margin-top:14px"><a class="btn small" href="#/liga/${m.liga}">← Volver a la Liga ${m.liga}</a></div>
   </div>`;
 }
@@ -413,7 +457,51 @@ function vistaPartido(id, modo) {
 // ---------- INSCRIPCIÓN ----------
 const ICONO_TURNO = { "Mañana": "☀️", "Tarde": "🌤️", "Noche": "🌙" };
 const HORA_TURNO = { "Mañana": "8 a 13 h", "Tarde": "13 a 19 h", "Noche": "19 a 24 h" };
+
+// Grilla de lunes a sábado × mañana/tarde/noche. "sel" son los valores ya marcados ("Lunes|Noche")
+function availGridHTML(sel = []) {
+  return `<div class="avail">
+    <span></span>${TURNOS.map(tn => `<div class="h">${ICONO_TURNO[tn]} ${tn}<br><span style="font-weight:500;letter-spacing:0">${HORA_TURNO[tn]}</span></div>`).join("")}
+    ${DIAS.map(d => `<div class="d">${d}</div>${TURNOS.map(tn => `<label><input type="checkbox" name="disp" value="${d}|${tn}" ${sel.includes(d + "|" + tn) ? "checked" : ""}><span class="c">${tn}</span></label>`).join("")}`).join("")}
+  </div>`;
+}
+// Buscador + grilla de equipos + resumen con el precio
+function equipoPickerHTML() {
+  return `<label class="lb">Elegí tu equipo</label>
+      <div class="row2"><input id="buscar" placeholder="Buscar equipo..."><select id="filtro"><option value="0">Todas las estrellas</option><option value="5">5 estrellas</option><option value="4.5">4.5 estrellas</option><option value="4">4 estrellas</option><option value="3.5">3.5 estrellas</option><option value="3">3 estrellas o menos</option></select></div>
+      <div class="team-pick" id="picker" style="margin-top:10px"></div>
+      <div class="summary"><div><span class="muted">Equipo elegido</span><div id="sel-nombre" style="font-weight:700">Ninguno</div></div><div style="text-align:right"><span class="muted">Inscripción</span><br><b id="sel-precio">$0</b></div></div>`;
+}
+// Activa el selector de equipos. Devuelve { get(), reset() }
+function montarSelectorEquipos() {
+  let elegido = null;
+  const picker = document.getElementById("picker");
+  const pintar = () => {
+    const f = parseFloat(document.getElementById("filtro").value);
+    const b = document.getElementById("buscar").value.trim().toLowerCase();
+    const lista = EQUIPOS.filter(t => (!f || (f === 3 ? t.estrellas <= 3 : t.estrellas === f)) && (!b || t.nombre.toLowerCase().includes(b)));
+    picker.innerHTML = lista.length ? lista.map(t => { const ocup = EQUIPOS_OCUPADOS.has(t.id);
+      return `<div class="pick ${elegido === t.id ? "sel" : ""} ${ocup ? "taken" : ""}" data-id="${t.id}">${crest(t)}<b>${t.nombre}</b><small>${stars(t.estrellas)}</small><em>${ocup ? "Ya elegido" : $money(t.precio)}</em></div>`; }).join("")
+      : `<p class="muted">No hay equipos con ese filtro.</p>`;
+  };
+  picker.addEventListener("click", e => {
+    const el = e.target.closest(".pick"); if (!el || el.classList.contains("taken")) return;
+    elegido = Number(el.dataset.id); const t = teamById(elegido);
+    document.getElementById("sel-nombre").textContent = t.nombre + " " + stars(t.estrellas);
+    document.getElementById("sel-precio").textContent = $money(t.precio);
+    pintar();
+  });
+  document.getElementById("filtro").addEventListener("change", pintar);
+  document.getElementById("buscar").addEventListener("input", pintar);
+  pintar();
+  return {
+    get: () => elegido,
+    reset: () => { elegido = null; document.getElementById("sel-nombre").textContent = "Ninguno"; document.getElementById("sel-precio").textContent = "$0"; pintar(); },
+  };
+}
+
 function vistaInscripcion() {
+  if (LIVE) return vistaInscripcionLive();
   return `<div class="wrap fade"><div class="formbox">
     <h2>Inscribite a la <span class="grad">liga</span></h2>
     <p class="muted" style="margin-top:8px">Completá tus datos, elegí tu equipo y decinos cuándo podés jugar.</p>
@@ -428,63 +516,41 @@ function vistaInscripcion() {
       <select name="plataforma"><option>PlayStation 5</option><option>PlayStation 4</option><option>Xbox Series</option><option>PC</option></select>
 
       <label class="lb">¿Qué día y horario te queda mejor? (marcá todos los que puedas)</label>
-      <div class="avail">
-        <span></span>${TURNOS.map(tn => `<div class="h">${ICONO_TURNO[tn]} ${tn}<br><span style="font-weight:500;letter-spacing:0">${HORA_TURNO[tn]}</span></div>`).join("")}
-        ${DIAS.map(d => `<div class="d">${d}</div>${TURNOS.map(tn => `<label><input type="checkbox" name="disp" value="${d}|${tn}"><span class="c">${tn}</span></label>`).join("")}`).join("")}
-      </div>
+      ${availGridHTML()}
 
-      <label class="lb">Elegí tu equipo</label>
-      <div class="row2"><input id="buscar" placeholder="Buscar equipo..."><select id="filtro"><option value="0">Todas las estrellas</option><option value="5">5 estrellas</option><option value="4.5">4.5 estrellas</option><option value="4">4 estrellas</option><option value="3.5">3.5 estrellas</option><option value="3">3 estrellas o menos</option></select></div>
-      <div class="team-pick" id="picker" style="margin-top:10px"></div>
-      <div class="summary"><div><span class="muted">Equipo elegido</span><div id="sel-nombre" style="font-weight:700">Ninguno</div></div><div style="text-align:right"><span class="muted">Inscripción</span><br><b id="sel-precio">$0</b></div></div>
+      ${equipoPickerHTML()}
       <button class="btn primary" style="width:100%;margin-top:18px" type="submit">Anotarme</button>
       <div id="resultado"></div>
     </form></div></div>`;
 }
 
 function iniciarInscripcion() {
-  let elegido = null;
-  const picker = document.getElementById("picker");
-  const pintar = () => {
-    const f = parseFloat(document.getElementById("filtro").value);
-    const b = document.getElementById("buscar").value.trim().toLowerCase();
-    const lista = EQUIPOS.filter(t => (!f || (f === 3 ? t.estrellas <= 3 : t.estrellas === f)) && (!b || t.nombre.toLowerCase().includes(b)));
-    picker.innerHTML = lista.length ? lista.map(t => `<div class="pick ${elegido === t.id ? "sel" : ""}" data-id="${t.id}">${crest(t)}<b>${t.nombre}</b><small>${stars(t.estrellas)}</small><em>${$money(t.precio)}</em></div>`).join("")
-      : `<p class="muted">No hay equipos con ese filtro.</p>`;
-  };
-  picker.addEventListener("click", e => {
-    const el = e.target.closest(".pick"); if (!el) return;
-    elegido = Number(el.dataset.id); const t = teamById(elegido);
-    document.getElementById("sel-nombre").textContent = t.nombre + " " + stars(t.estrellas);
-    document.getElementById("sel-precio").textContent = $money(t.precio);
-    pintar();
-  });
-  document.getElementById("filtro").addEventListener("change", pintar);
-  document.getElementById("buscar").addEventListener("input", pintar);
-  pintar();
+  if (LIVE) return iniciarInscripcionLive();
+  const sel = montarSelectorEquipos();
   document.getElementById("form").addEventListener("submit", e => {
     e.preventDefault();
     const out = document.getElementById("resultado");
     const disp = [...e.target.querySelectorAll('input[name="disp"]:checked')].map(x => x.value);
-    if (!elegido) { out.innerHTML = `<div class="msg err">Elegí un equipo primero.</div>`; return; }
+    if (!sel.get()) { out.innerHTML = `<div class="msg err">Elegí un equipo primero.</div>`; return; }
     if (!disp.length) { out.innerHTML = `<div class="msg err">Marcá al menos un día y horario en que puedas jugar.</div>`; return; }
-    const d = Object.fromEntries(new FormData(e.target)); const t = teamById(elegido);
-    addInscripto({ nombre: d.nombre, gamertag: d.gamertag, whatsapp: d.whatsapp, plataforma: d.plataforma, equipoId: elegido, disp, ts: Date.now() });
-    out.innerHTML = `<div class="msg">¡Listo, <b>${d.nombre}</b>! Quedaste anotado con <b>${t.nombre}</b>. Inscripción: <b>${$money(t.precio)}</b>. Elegiste ${disp.length} horarios. (Por ahora es una demostración: todavía no se guarda en la base de datos.)</div>`;
-    e.target.reset(); elegido = null;
-    document.getElementById("sel-nombre").textContent = "Ninguno"; document.getElementById("sel-precio").textContent = "$0";
-    pintar();
+    const d = Object.fromEntries(new FormData(e.target)); const t = teamById(sel.get());
+    addInscripto({ nombre: d.nombre, gamertag: d.gamertag, whatsapp: d.whatsapp, plataforma: d.plataforma, equipoId: sel.get(), disp, ts: Date.now(), estado: "pendiente" });
+    out.innerHTML = `<div class="msg">¡Listo, <b>${esc(d.nombre)}</b>! Quedaste anotado con <b>${t.nombre}</b>. Inscripción: <b>${$money(t.precio)}</b>. Elegiste ${disp.length} horarios. (Por ahora es una demostración: todavía no se guarda en la base de datos.)</div>`;
+    e.target.reset(); sel.reset();
   });
 }
 
 // ---------- ADMIN ----------
-function vistaAdmin() {
-  const all = todasInscripciones();
+function adminResumen() {
+  const all = todasInscripciones().filter(x => x.estado !== "rechazada");
   const n = all.length;
   const conEq = all.map(x => ({ ...x, t: teamById(x.equipoId) }));
-  const total = conEq.reduce((a, x) => a + x.t.precio, 0);
+  // Con datos reales, la recaudación cuenta solo lo que figura como pagado
+  const cobrados = LIVE ? conEq.filter(x => x.pagado) : conEq;
+  const total = cobrados.reduce((a, x) => a + x.t.precio, 0);
+  const porCobrar = LIVE ? conEq.filter(x => !x.pagado).reduce((a, x) => a + x.t.precio, 0) : 0;
   const cubre = Math.round(total / PREMIO * 100);
-  const prom = n ? total / n : 0;
+  const prom = cobrados.length ? total / cobrados.length : 0;
 
   // categorías de precio
   const cats = [[10000, "Hasta 3★"], [20000, "3.5 a 4★"], [50000, "4.5★"], [100000, "5★"]].map(([pr, nom]) => {
@@ -529,13 +595,14 @@ function vistaAdmin() {
 
   const reales = all.filter(x => !x.demo).length;
 
-  return `<div class="wrap fade" style="padding-top:40px">
-    <div class="sec-title"><h2>Panel de <em>administrador</em></h2><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="muted" style="font-size:13px">${ADMIN_EMAIL}</span><button class="btn small" id="csv">⬇ Exportar CSV</button><button class="btn small" id="salir">Cerrar sesión</button></div></div>
+  return `<div>
     <div class="kpis">
-      <div class="kpi"><b style="color:var(--win)">${n}</b><span>Inscriptos (${reales} reales + ${n - reales} de ejemplo)</span></div>
-      <div class="kpi"><b class="gold">${$money(total)}</b><span>Recaudación total</span></div>
+      <div class="kpi"><b style="color:var(--win)">${n}</b><span>${LIVE ? "Inscriptos" : `Inscriptos (${reales} reales + ${n - reales} de ejemplo)`}</span></div>
+      ${LIVE ? `<div class="kpi"><b>${all.filter(x => x.estado === "pendiente").length}</b><span>Pendientes de aprobar</span></div>` : ""}
+      <div class="kpi"><b class="gold">${$money(total)}</b><span>${LIVE ? "Cobrado (marcado como pagado)" : "Recaudación total"}</span></div>
+      ${LIVE ? `<div class="kpi"><b>${$money(porCobrar)}</b><span>Por cobrar</span></div>` : ""}
       <div class="kpi"><b>${cubre}%</b><span>del premio cubierto (${$money(PREMIO)})</span></div>
-      <div class="kpi"><b>${$money(prom)}</b><span>Ticket promedio</span></div>
+      <div class="kpi"><b>${$money(prom)}</b><span>Ticket promedio (cobrado)</span></div>
       <div class="kpi"><b>${Math.max(0, META_INSCRIPTOS - n)}</b><span>Cupos libres de ${META_INSCRIPTOS}</span></div>
     </div>
     <div class="progress" style="margin-top:14px"><i style="width:${Math.min(100, cubre)}%"></i></div>
@@ -569,16 +636,15 @@ function vistaAdmin() {
 
     <h3 class="sub" style="margin-top:28px">Todos los inscriptos</h3>
     <div class="table-wrap"><table><thead><tr><th>#</th><th class="l">Jugador</th><th class="l">Equipo</th><th>Estrellas</th><th>Inscripción</th><th>Plataforma</th><th>WhatsApp</th><th class="l">Horarios</th></tr></thead><tbody>
-      ${conEq.map((x, i) => `<tr><td>${i + 1}</td><td class="l"><b>${x.nombre}</b>${x.demo ? ' <span class="badge">ejemplo</span>' : ""}</td><td class="l"><div class="team-cell">${crest(x.t)}${x.t.nombre}</div></td><td class="gold">${stars(x.t.estrellas)}</td><td class="pts">${$money(x.t.precio)}</td><td>${x.plataforma}</td><td>${x.whatsapp || "—"}</td><td class="l muted" style="white-space:normal;min-width:220px;font-size:12px">${resumenDisp(x.disp)}</td></tr>`).join("")}
+      ${conEq.map((x, i) => `<tr><td>${i + 1}</td><td class="l"><b>${esc(x.nombre)}</b>${x.demo ? ' <span class="badge">ejemplo</span>' : ""}${LIVE ? ` <span class="badge ${x.estado === 'aprobada' ? 'g' : 'y'}">${x.estado}</span>` : ""}</td><td class="l"><div class="team-cell">${crest(x.t)}${x.t.nombre}</div></td><td class="gold">${stars(x.t.estrellas)}</td><td class="pts">${$money(x.t.precio)}</td><td>${esc(x.plataforma)}</td><td>${esc(x.whatsapp) || "—"}</td><td class="l muted" style="white-space:normal;min-width:220px;font-size:12px">${resumenDisp(x.disp)}</td></tr>`).join("")}
     </tbody></table></div>
-    <div class="warn">Los datos de este panel todavía son de ejemplo. En el próximo paso las inscripciones se guardan en Supabase y solo el administrador puede leerlas.</div>
+    ${LIVE ? "" : `<div class="warn">Los datos de este panel son de ejemplo. Cuando conectes Supabase se van a ver los inscriptos reales.</div>`}
   </div>`;
 }
 function resumenDisp(disp) {
   return DIAS.map(d => { const ts = TURNOS.filter(tn => disp.includes(d + "|" + tn)); return ts.length ? `<b>${d.slice(0, 3)}</b> ${ts.map(t => t[0]).join("/")}` : ""; }).filter(Boolean).join(" · ");
 }
 function iniciarAdmin() {
-  const so = document.getElementById("salir"); if (so) so.addEventListener("click", cerrarSesion);
   const b = document.getElementById("csv"); if (!b) return;
   b.addEventListener("click", () => {
     const filas = [["Nombre", "ID consola", "WhatsApp", "Plataforma", "Equipo", "Estrellas", "Precio", "Horarios"]];
@@ -644,124 +710,36 @@ function iniciarReveal() {
 }
 
 // ============================================================
-//  LOGIN DE ADMINISTRADOR (Supabase Auth)
-//  La contraseña NO está en el código: vive en Supabase.
-// ============================================================
-// Deja la URL en su forma correcta (https://XXXX.supabase.co), sin barras ni rutas de más
-function normalizarUrlSupabase(u) {
-  u = String(u || "").trim().replace(/^["']|["']$/g, "");
-  const dash = u.match(/supabase\.com\/dashboard\/project\/([a-z0-9]+)/i); // si pegó la dirección del panel
-  if (dash) return "https://" + dash[1].toLowerCase() + ".supabase.co";
-  if (!/^https?:\/\//i.test(u)) u = "https://" + u;
-  try { return new URL(u).origin; } catch (e) { return u; }
-}
-let sb = null;
-if (window.supabase && typeof SUPABASE_URL !== "undefined" && SUPABASE_URL && !SUPABASE_URL.startsWith("PEGAR")) {
-  try { sb = window.supabase.createClient(normalizarUrlSupabase(SUPABASE_URL), String(SUPABASE_ANON_KEY).trim()); } catch (e) { sb = null; }
-}
-let ES_ADMIN = false, ADMIN_EMAIL = "", ADMIN_ERR = "";
-
-async function verificarAdmin() {
-  ES_ADMIN = false; ADMIN_EMAIL = ""; ADMIN_ERR = "";
-  if (!sb) return;
-  try {
-    const { data } = await sb.auth.getSession();
-    const user = data && data.session && data.session.user;
-    if (!user) return;
-    // Solo es admin si su email está en la tabla "admins"
-    const r = await sb.from("admins").select("email").eq("email", user.email).maybeSingle();
-    if (r.error) { ADMIN_ERR = r.error.message || "error desconocido"; return; }
-    if (r.data) { ES_ADMIN = true; ADMIN_EMAIL = user.email; }
-  } catch (e) { ES_ADMIN = false; ADMIN_ERR = String(e && e.message || e); }
-}
-
-function explicarErrorLogin(err) {
-  const m = String(err && err.message || err || "").toLowerCase();
-  if (m.includes("invalid login credentials")) return "El email o la contraseña no coinciden con el usuario creado en Supabase. Revisá que escribas la misma contraseña que pusiste al crear el usuario.";
-  if (m.includes("email not confirmed")) return "El usuario existe pero no está confirmado. En Supabase andá a Authentication → Users, abrí el usuario y confirmalo (o borralo y crealo de nuevo tildando Auto Confirm User).";
-  if (m.includes("api key") || m.includes("apikey") || m.includes("jwt")) return "La clave de config.js es incorrecta. Volvé a copiar la anon public key.";
-  if (m.includes("invalid path")) return "La URL de config.js está mal. Tiene que ser solo https://TU-PROYECTO.supabase.co, sin nada después de .co (la sacás de Project Settings → API → Project URL).";
-  if (m.includes("failed to fetch") || m.includes("network") || m.includes("load failed")) return "No se pudo conectar con Supabase. Revisá la URL de config.js (tiene que empezar con https:// y terminar en .supabase.co).";
-  if (m.includes("rate limit") || m.includes("too many")) return "Demasiados intentos seguidos. Esperá unos minutos y probá de nuevo.";
-  return "Error de Supabase: " + (err && err.message ? err.message : err);
-}
-
-function vistaLogin() {
-  return `<div class="wrap fade"><div class="formbox" style="max-width:480px">
-    <span class="pill">Acceso restringido</span>
-    <h2 style="margin-top:12px">Ingreso <span class="grad">admin</span></h2>
-    <p class="muted" style="margin-top:8px">Solo para la organización de la liga.</p>
-    ${sb ? "" : `<div class="warn">Todavía falta conectar Supabase: completá el archivo <b>config.js</b> con la URL y la clave de tu proyecto. Hasta entonces el panel no se puede abrir.</div>`}
-    <form id="login">
-      <label class="lb">Email</label>
-      <input name="email" type="email" required autocomplete="username" placeholder="tu-email@gmail.com">
-      <label class="lb">Contraseña</label>
-      <input name="password" type="password" required autocomplete="current-password" placeholder="Tu contraseña">
-      <button class="btn primary" style="width:100%;margin-top:18px" type="submit" ${sb ? "" : "disabled"}>Entrar</button>
-      <button class="btn" style="width:100%;margin-top:10px;opacity:.5;cursor:not-allowed" type="button" disabled>Continuar con Google (próximamente)</button>
-      <div id="login-msg"></div>
-    </form></div></div>`;
-}
-
-function iniciarLogin() {
-  const f = document.getElementById("login"); if (!f) return;
-  f.addEventListener("submit", async e => {
-    e.preventDefault();
-    const out = document.getElementById("login-msg");
-    if (!sb) { out.innerHTML = `<div class="msg err">Supabase todavía no está conectado.</div>`; return; }
-    const d = Object.fromEntries(new FormData(f));
-    out.innerHTML = `<div class="msg">Verificando...</div>`;
-    const { error } = await sb.auth.signInWithPassword({ email: d.email.trim(), password: d.password });
-    if (error) { out.innerHTML = `<div class="msg err">${explicarErrorLogin(error)}</div>`; return; }
-    await verificarAdmin();
-    if (!ES_ADMIN) {
-      await sb.auth.signOut();
-      out.innerHTML = ADMIN_ERR
-        ? `<div class="msg err">La contraseña es correcta, pero no se pudo verificar el permiso de administrador (${ADMIN_ERR}). Probablemente falta ejecutar el SQL de supabase-1-admin.sql en Supabase.</div>`
-        : `<div class="msg err">La contraseña es correcta, pero ese email no figura como administrador. Ejecutá el SQL de supabase-1-admin.sql, o revisá que el email sea exactamente el mismo.</div>`;
-      return;
-    }
-    location.hash = "#/admin"; render();
-  });
-}
-
-async function cerrarSesion() {
-  if (sb) { try { await sb.auth.signOut(); } catch (e) {} }
-  ES_ADMIN = false; ADMIN_EMAIL = "";
-  location.hash = "#/"; render();
-}
-
-// ============================================================
 //  ROUTER
 // ============================================================
+const RUTAS_CON_CARRUSEL = ["", undefined];
 function render() {
   clearTimers();
   const hash = location.hash.replace(/^#\/?/, "");
-  const [ruta, param, param2] = hash.split("/");
-  let html = "";
+  const [ruta, param, param2, param3] = hash.split("/");
+  let html = "", init = null, esInicio = false;
   switch (ruta) {
-    case "": html = vistaInicio(); break;
+    case "": html = vistaInicio(); esInicio = true; break;
     case "ligas": html = vistaLigas(); break;
     case "liga": html = vistaLiga((param || "A").toUpperCase(), param2); break;
     case "equipos": html = vistaEquipos(); break;
     case "jugadores": html = vistaJugadores(); break;
     case "jugador": html = vistaJugador(param); break;
     case "partido": html = vistaPartido(param, param2); break;
-    case "inscripcion": html = vistaInscripcion(); break;
-    case "admin": html = ES_ADMIN ? vistaAdmin() : vistaLogin(); break;
-    case "login": html = ES_ADMIN ? vistaAdmin() : vistaLogin(); break;
-    default: html = vistaInicio();
+    case "inscripcion": html = vistaInscripcion(); init = iniciarInscripcion; break;
+    case "ingresar": case "registro": case "login": html = vistaAuth(ruta === "registro" ? "registro" : "ingresar"); init = iniciarAuth; break;
+    case "panel": html = vistaPanel(); init = iniciarPanel; break;
+    case "admin": html = vistaAdminShell(param, param2, param3); init = iniciarAdminShell; break;
+    default: html = vistaInicio(); esInicio = true;
   }
-  app.innerHTML = html;
-  if (ruta === "inscripcion") iniciarInscripcion();
-  if (ruta === "admin" || ruta === "login") { if (ES_ADMIN) iniciarAdmin(); else iniciarLogin(); }
-  if (!ruta || !["ligas", "liga", "equipos", "jugadores", "jugador", "partido", "inscripcion", "admin", "login"].includes(ruta)) { iniciarCarrusel(); iniciarCuentaRegresiva(); countUp(app.querySelector(".slide.active")); }
-  document.querySelectorAll("#menu a").forEach(a => a.classList.toggle("active", a.dataset.r === (ruta === "liga" || ruta === "partido" ? "ligas" : ruta === "jugador" ? "jugadores" : ruta)));
-  window.scrollTo(0, 0);
+  app.innerHTML = (typeof bannerErrorDatos === "function" ? bannerErrorDatos() : "") + html;
+  if (init) init();
+  if (esInicio) { iniciarCarrusel(); iniciarCuentaRegresiva(); countUp(app.querySelector(".slide.active")); }
+  const activa = ruta === "liga" || ruta === "partido" ? "ligas" : ruta === "jugador" ? "jugadores" : (ruta === "registro" || ruta === "login") ? "ingresar" : ruta;
+  if (typeof renderMenu === "function") renderMenu(activa);
+  if (!KEEP_SCROLL) window.scrollTo(0, 0);
+  KEEP_SCROLL = false;
   iniciarReveal();
   requestAnimationFrame(() => setTimeout(() => document.querySelectorAll(".bar i[data-w]").forEach(b => b.style.width = b.dataset.w + "%"), 60));
 }
-window.addEventListener("hashchange", render);
-render();
-// Al cargar, revisamos si ya hay una sesión de administrador abierta
-verificarAdmin().then(() => { if (/^#\/(admin|login)/.test(location.hash)) render(); });
+// El arranque (cargar datos y llamar a render) está al final de panel.js
