@@ -63,15 +63,16 @@ const EQUIPOS = EQUIPOS_RAW.map(([nombre, estrellas, c1, c2], i) => ({
   iniciales: nombre.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ ]/g, "").split(" ").filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase()
 }));
 
+
 const LIGAS = [
-  { id: "A", nombre: "Liga A", desc: "La élite. Los mejores jugadores de Necochea.", color: "#00ff87" },
-  { id: "B", nombre: "Liga B", desc: "Alto nivel y mucha pelea por el ascenso.", color: "#3b82f6" },
-  { id: "C", nombre: "Liga C", desc: "Intermedia, pareja y muy picante.", color: "#8b5cf6" },
-  { id: "D", nombre: "Liga D", desc: "Para los que vienen creciendo.", color: "#ffc83d" },
-  { id: "E", nombre: "Liga E", desc: "Puerta de entrada a la competencia.", color: "#ff4d6d" },
+  { id: "A", nombre: "Liga A", desc: "La élite. Los mejores jugadores de Necochea.", color: "#ffc531" },
+  { id: "B", nombre: "Liga B", desc: "Alto nivel y mucha pelea por el ascenso.", color: "#3ee6ff" },
+  { id: "C", nombre: "Liga C", desc: "Intermedia, pareja y muy picante.", color: "#8b7bff" },
+  { id: "D", nombre: "Liga D", desc: "Para los que vienen creciendo.", color: "#ff8a3d" },
+  { id: "E", nombre: "Liga E", desc: "Puerta de entrada a la competencia.", color: "#ff4d5e" },
 ];
 
-// Jugadores de ejemplo (nombre de usuario, equipo)
+// Jugadores de ejemplo (nombre de usuario)
 const NOMBRES_DEMO = [
   "QuichaProPlayer", "ElPibeDeLaCosta", "TitoFC", "MaxiCrack10", "NecocheaGamer", "LaBestiaSur",
   "FranGol99", "ElCholo_Nqn", "SantiSniper", "BrunoTheWall", "LucasMagic", "DaniDribbler",
@@ -88,78 +89,102 @@ function rng(seed) {
   return () => { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; };
 }
 
-// Arma 8 participantes por liga con tabla de ejemplo
+// ============================================================
+//  ESTADÍSTICAS: son las que muestra el juego en el entretiempo
+//  y al final del partido. Acumuladas por jugador en la tabla:
+//   gf / gc (goles a favor y en contra), posesion (% promedio),
+//   tiros, tirosArco, pases, precision (% de pases), entradas,
+//   faltas, offsides, corners, amarillas, rojas, atajadas
+// ============================================================
 const PARTICIPANTES = [];
 const PJ_DEMO = 10;
 (function () {
   const r = rng(27);
-  // Equipos asignados de forma ordenada por estrellas a cada liga
   const orden = [...EQUIPOS].sort((a, b) => b.estrellas - a.estrellas);
   let n = 0;
-  LIGAS.forEach((liga, li) => {
+  LIGAS.forEach(liga => {
     for (let k = 0; k < 8; k++) {
       const equipo = orden[n % orden.length];
       const nombre = NOMBRES_DEMO[n % NOMBRES_DEMO.length];
       n++;
-      // Fuerza: la primera de la liga A es QuichaProPlayer
       let fuerza = r();
       if (nombre === "QuichaProPlayer") fuerza = 0.97;
       let g = Math.round(fuerza * 8 + r() * 2);
       g = Math.min(nombre === "QuichaProPlayer" ? PJ_DEMO : 7, g);
-      let e = Math.min(PJ_DEMO - g, Math.floor(r() * 3));
+      const e = Math.min(PJ_DEMO - g, Math.floor(r() * 3));
       const p = PJ_DEMO - g - e;
       const gf = g * 2 + e + Math.floor(r() * 6);
       const gc = p * 2 + e + Math.floor(r() * 5);
       const forma = [];
       for (let f = 0; f < 5; f++) { const x = r(); forma.push(x < fuerza * .75 ? "G" : x < fuerza * .75 + .15 ? "E" : "P"); }
+      const tiros = Math.round(gf * 3.4 + PJ_DEMO * 2 + r() * 20);
       PARTICIPANTES.push({
         id: nombre.toLowerCase(), nombre, equipoId: equipo.id, liga: liga.id,
         pj: PJ_DEMO, g, e, p, gf, gc, dg: gf - gc, pts: g * 3 + e, forma,
-        pases: Math.round(300 + r() * 250), tiros: Math.round(8 + r() * 12), posesion: Math.round(42 + r() * 20)
+        posesion: Math.round(42 + fuerza * 14 + r() * 6),
+        tiros, tirosArco: Math.min(tiros, Math.round(gf * 1.9 + PJ_DEMO * 1.2 + r() * 8)),
+        pases: Math.round(PJ_DEMO * (230 + r() * 140)), precision: Math.round(68 + fuerza * 14 + r() * 6),
+        entradas: Math.round(PJ_DEMO * (6 + r() * 6)), faltas: Math.round(PJ_DEMO * (2 + r() * 3)),
+        offsides: Math.round(PJ_DEMO * (0.5 + r() * 1.5)), corners: Math.round(PJ_DEMO * (3 + r() * 3)),
+        amarillas: Math.floor(r() * 7), rojas: r() < 0.12 ? 1 : 0, atajadas: Math.round(PJ_DEMO * (2 + r() * 3)),
+        ciudad: "Necochea", plataforma: "PlayStation 5", desde: "Octubre 2026"
       });
     }
   });
 })();
 
-// Perfil completo de ejemplo
-const PERFIL_QUICHA = {
-  id: "quichaproplayer",
-  nombre: "QuichaProPlayer",
-  ciudad: "Necochea",
-  plataforma: "PlayStation 5",
-  posicionFav: "Delantero (DC)",
-  ovr: 91,
-  desde: "Octubre 2026",
-  racha: "Racha de 6 victorias",
-  stats: {
-    partidos: 10, victorias: 9, empates: 1, derrotas: 0,
-    goles: 34, golesContra: 8, asistencias: 17, mvp: 6, vallasInvictas: 5,
-    tiros: 142, tirosAlArco: 91, precisionTiros: 64,
-    pases: 4120, pasesCompletados: 3590, precisionPases: 87,
-    pasesClave: 63, pasesProgresivos: 211,
-    regates: 118, regatesExitosos: 84,
-    posesion: 61, recuperaciones: 167, intercepciones: 92, entradas: 74,
-    faltasCometidas: 38, faltasRecibidas: 71, amarillas: 3, rojas: 0,
-    corners: 58, golesDeTiroLibre: 4, golesDePenal: 5, golesDeCabeza: 3,
-    xG: 29.4, minutosJugados: 900
-  },
-  habilidades: [
-    ["Definición", 94], ["Pase", 87], ["Regate", 89], ["Posicionamiento", 91],
-    ["Defensa", 62], ["Físico", 78], ["Velocidad", 90], ["Mentalidad", 93]
-  ],
-  partidos: [
-    { j: 10, rival: "ElZurdoLoco", res: "4-1", r: "G", goles: 2, asist: 1 },
-    { j: 9, rival: "MaxiCrack10", res: "3-0", r: "G", goles: 1, asist: 2 },
-    { j: 8, rival: "LaBestiaSur", res: "2-2", r: "E", goles: 1, asist: 0 },
-    { j: 7, rival: "TitoFC", res: "5-2", r: "G", goles: 3, asist: 1 },
-    { j: 6, rival: "NecocheaGamer", res: "2-0", r: "G", goles: 2, asist: 0 },
-    { j: 5, rival: "FranGol99", res: "3-1", r: "G", goles: 1, asist: 1 },
-  ]
-};
-// El equipo de Quicha en el ejemplo
+// Jugador de ejemplo: QuichaProPlayer (Real Madrid, Liga A)
 const _q = PARTICIPANTES.find(p => p.nombre === "QuichaProPlayer");
-if (_q) { _q.equipoId = EQUIPOS.find(t => t.nombre === "Real Madrid").id; _q.liga = "A";
-  _q.pj = 10; _q.g = 9; _q.e = 1; _q.p = 0; _q.gf = 34; _q.gc = 8; _q.dg = 26; _q.pts = 28; _q.forma = ["G","G","G","E","G"]; }
+Object.assign(_q, {
+  equipoId: EQUIPOS.find(t => t.nombre === "Real Madrid").id, liga: "A",
+  pj: 10, g: 9, e: 1, p: 0, gf: 34, gc: 8, dg: 26, pts: 28, forma: ["G", "G", "E", "G", "G"],
+  posesion: 61, tiros: 142, tirosArco: 91, pases: 4120, precision: 87, entradas: 74,
+  faltas: 38, offsides: 9, corners: 58, amarillas: 3, rojas: 0, atajadas: 23,
+  plataforma: "PlayStation 5", racha: "Invicto en 10 partidos"
+});
+
+// ============================================================
+//  PARTIDOS DE EJEMPLO con ficha del entretiempo (ht) y del final (ft)
+//  "a" y "b" son los ids de los jugadores (nombre en minúsculas)
+// ============================================================
+const PARTIDOS_DEMO = (function () {
+  const r = rng(555);
+  const cl = (v, a, b) => Math.max(a, Math.min(b, v));
+  function lado(g, pos) {
+    const tiros = g * 3 + 5 + Math.floor(r() * 6);
+    return {
+      goles: g, pos, tiros, tirosArco: Math.max(g, Math.min(tiros, g + 2 + Math.floor(r() * 4))),
+      pases: Math.round(150 + pos * 4.2 + r() * 60), precision: cl(Math.round(66 + pos / 4 + r() * 14), 60, 93),
+      entradas: 6 + Math.floor(r() * 10), faltas: 1 + Math.floor(r() * 6), offsides: Math.floor(r() * 4),
+      corners: Math.floor(r() * 8), amarillas: r() < 0.35 ? 1 : 0, rojas: 0, atajadas: 0
+    };
+  }
+  function mitad(S, gH) {
+    const arco = Math.max(gH, Math.floor(S.tirosArco * 0.5));
+    return {
+      goles: gH, pos: cl(S.pos + Math.round((r() - 0.5) * 6), 30, 72), tiros: Math.max(arco, Math.floor(S.tiros * 0.5)), tirosArco: arco,
+      pases: Math.floor(S.pases * 0.48), precision: cl(S.precision + Math.round((r() - 0.5) * 4), 55, 95),
+      entradas: Math.floor(S.entradas * 0.5), faltas: Math.floor(S.faltas * 0.5), offsides: Math.floor(S.offsides * 0.5),
+      corners: Math.floor(S.corners * 0.5), amarillas: Math.floor(S.amarillas * 0.5), rojas: 0, atajadas: 0
+    };
+  }
+  function mk(id, jornada, a, b, ga, gb, ha, hb, posA) {
+    const A = lado(ga, posA), B = lado(gb, 100 - posA);
+    A.atajadas = Math.max(0, B.tirosArco - B.goles); B.atajadas = Math.max(0, A.tirosArco - A.goles);
+    const hA = mitad(A, ha), hB = mitad(B, hb);
+    hB.pos = 100 - hA.pos;
+    hA.atajadas = Math.max(0, hB.tirosArco - hB.goles); hB.atajadas = Math.max(0, hA.tirosArco - hA.goles);
+    return { id, jornada, liga: "A", a, b, ft: { a: A, b: B }, ht: { a: hA, b: hB } };
+  }
+  return [
+    mk("p10", 10, "quichaproplayer", "elcholo_nqn", 4, 1, 2, 0, 63),
+    mk("p9", 9, "maxicrack10", "quichaproplayer", 0, 3, 0, 2, 42),
+    mk("p8", 8, "quichaproplayer", "labestiasur", 2, 2, 1, 1, 58),
+    mk("p7", 7, "quichaproplayer", "titofc", 5, 2, 3, 1, 60),
+    mk("p6", 6, "necocheagamer", "quichaproplayer", 0, 2, 0, 1, 40),
+    mk("p5", 5, "quichaproplayer", "frangol99", 3, 1, 1, 0, 62),
+  ];
+})();
 
 // Cuántos inscriptos "reales" hay (en la versión 1 es de ejemplo)
 const META_INSCRIPTOS = 40;
