@@ -216,3 +216,13 @@ const DEMO_INSCRIPTOS = (function () {
   }
   return out;
 })();
+
+// Próximos partidos de EJEMPLO (para mostrar cómo se ve el panel del jugador)
+const PARTIDOS_PROG_DEMO = (function () {
+  const f = (dias, h) => { const d = new Date(); d.setDate(d.getDate() + dias); d.setHours(h, 0, 0, 0); return d.toISOString(); };
+  return [
+    { id: "pp11", liga: "A", jornada: 11, a: "quichaproplayer", b: "elpibedelacosta", estado: "programado", fecha: f(3, 21), ft: null, ht: null },
+    { id: "pp12", liga: "A", jornada: 12, a: "titofc", b: "quichaproplayer", estado: "programado", fecha: f(7, 22), ft: null, ht: null },
+    { id: "pp13", liga: "A", jornada: 13, a: "quichaproplayer", b: "maxicrack10", estado: "programado", fecha: f(10, 20), ft: null, ht: null },
+  ];
+})();
