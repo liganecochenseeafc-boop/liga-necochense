@@ -31,14 +31,14 @@ function tablaLiga(id) {
 function playerSVG(p = "a") {
   return `<svg viewBox="0 0 400 520" class="player-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Jugador ilustrado de la liga">
   <defs>
-    <linearGradient id="${p}j" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d4a39"/><stop offset="1" stop-color="#04130f"/></linearGradient>
+    <linearGradient id="${p}j" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14408a"/><stop offset="1" stop-color="#050f24"/></linearGradient>
     <linearGradient id="${p}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e3a97c"/><stop offset="1" stop-color="#c78556"/></linearGradient>
     <clipPath id="${p}c"><path d="M30 520C30 420 90 372 200 362C310 372 370 420 370 520Z"/></clipPath>
   </defs>
   <text x="200" y="330" text-anchor="middle" font-size="380" font-family="Barlow Condensed,Arial" font-weight="800" font-style="italic" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="2">10</text>
   <path d="M30 520C30 420 90 372 200 362C310 372 370 420 370 520Z" fill="url(#${p}j)"/>
-  <g clip-path="url(#${p}c)"><path d="M-20 420L420 340L420 392L-20 472Z" fill="#00ff87"/><path d="M-20 486L420 406L420 420L-20 500Z" fill="#fff" opacity=".85"/></g>
-  <path d="M168 366L200 414L232 366Z" fill="#04130f"/><path d="M160 364L200 422L240 364" stroke="#00ff87" stroke-width="6" fill="none" stroke-linejoin="round"/>
+  <g clip-path="url(#${p}c)"><path d="M-20 420L420 340L420 392L-20 472Z" fill="#ffc531"/><path d="M-20 486L420 406L420 420L-20 500Z" fill="#fff" opacity=".85"/></g>
+  <path d="M168 366L200 414L232 366Z" fill="#050f24"/><path d="M160 364L200 422L240 364" stroke="#ffc531" stroke-width="6" fill="none" stroke-linejoin="round"/>
   <path d="M170 298h60v72q-30 34-60 0z" fill="url(#${p}s)"/><path d="M170 330q30 24 60 0v14q-30 22-60 0z" fill="#9a6038" opacity=".5"/>
   <ellipse cx="133" cy="246" rx="11" ry="20" fill="#c78556"/><ellipse cx="267" cy="246" rx="11" ry="20" fill="#c78556"/>
   <ellipse cx="200" cy="236" rx="68" ry="82" fill="url(#${p}s)"/>
@@ -50,11 +50,11 @@ function playerSVG(p = "a") {
   <path d="M200 240q-9 24 5 28" stroke="#a96a41" stroke-width="4" stroke-linecap="round" fill="none"/>
   <path d="M174 282q28 22 54-5" stroke="#7a3f25" stroke-width="5" stroke-linecap="round" fill="none"/>
   <path d="M130 240C120 110 280 110 270 240" fill="none" stroke="#0a101d" stroke-width="15" stroke-linecap="round"/>
-  <path d="M133 232C126 124 274 124 267 232" fill="none" stroke="#00ff87" stroke-width="2" opacity=".7"/>
-  <rect x="110" y="214" width="32" height="68" rx="15" fill="#0a101d" stroke="#00ff87" stroke-width="4"/>
-  <rect x="258" y="214" width="32" height="68" rx="15" fill="#0a101d" stroke="#00ff87" stroke-width="4"/>
-  <path d="M122 276q-4 44 42 52" stroke="#0a101d" stroke-width="6" fill="none" stroke-linecap="round"/><circle cx="166" cy="328" r="8" fill="#00ff87"/>
-  <text x="200" y="508" text-anchor="middle" font-size="64" font-family="Barlow Condensed,Arial" font-weight="800" font-style="italic" fill="#04130f" opacity=".85">10</text>
+  <path d="M133 232C126 124 274 124 267 232" fill="none" stroke="#ffc531" stroke-width="2" opacity=".7"/>
+  <rect x="110" y="214" width="32" height="68" rx="15" fill="#0a101d" stroke="#ffc531" stroke-width="4"/>
+  <rect x="258" y="214" width="32" height="68" rx="15" fill="#0a101d" stroke="#ffc531" stroke-width="4"/>
+  <path d="M122 276q-4 44 42 52" stroke="#0a101d" stroke-width="6" fill="none" stroke-linecap="round"/><circle cx="166" cy="328" r="8" fill="#ffc531"/>
+  <text x="200" y="508" text-anchor="middle" font-size="64" font-family="Barlow Condensed,Arial" font-weight="800" font-style="italic" fill="#050f24" opacity=".85">10</text>
   </svg>`;
 }
 function trophySVG(cls = "") {
@@ -64,6 +64,40 @@ function trophySVG(cls = "") {
   <rect x="92" y="120" width="16" height="28" fill="url(#tg)"/><rect x="66" y="148" width="68" height="14" rx="5" fill="url(#tg)"/>
   <circle cx="100" cy="68" r="14" fill="#fff3b8" opacity=".7"/></svg>`;
 }
+// Faro de Quequén con su haz de luz giratorio (la marca de la liga)
+function faroSVG() {
+  return `<div class="faro" aria-hidden="true"><div class="beam"></div>
+  <svg viewBox="0 0 90 300" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="fw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#cfd9f0"/><stop offset=".5" stop-color="#fff"/><stop offset="1" stop-color="#9fb0d4"/></linearGradient></defs>
+    <path d="M26 96h38l12 200H14z" fill="url(#fw)"/>
+    <path d="M23 132h44l3 28H20zM17 198h56l3 28H14zM13 264h64l1 24H12z" fill="#d62f3f" opacity=".92"/>
+    <rect x="20" y="86" width="50" height="10" fill="#1b2c55"/>
+    <rect x="30" y="52" width="30" height="34" fill="#ffe28c"/><rect x="30" y="52" width="30" height="34" fill="url(#fw)" opacity=".25"/>
+    <path d="M28 52h34l-17-26z" fill="#1b2c55"/><rect x="43" y="14" width="4" height="14" fill="#1b2c55"/>
+    <circle cx="45" cy="69" r="10" fill="#fff6c9"/>
+  </svg></div>`;
+}
+function wavesSVG() {
+  const p = "M0 30Q150 0 300 30T600 30T900 30T1200 30V60H0Z";
+  return `<svg class="wave w2" viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true"><path d="${p}" fill="rgba(62,230,255,.16)"/></svg>
+  <svg class="wave w1" viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true"><path d="${p}" fill="#030815"/></svg>`;
+}
+
+// ---------- Helpers de estadísticas ----------
+const pm = (v, pj) => pj ? (v / pj).toFixed(1).replace(".0", "") : "0";
+function resultadoPara(m, id) {
+  const soyA = m.a === id, mi = soyA ? m.ft.a.goles : m.ft.b.goles, su = soyA ? m.ft.b.goles : m.ft.a.goles;
+  return { rival: soyA ? m.b : m.a, mi, su, r: mi > su ? "G" : mi === su ? "E" : "P" };
+}
+const jugadorById = id => PARTICIPANTES.find(x => x.id === id);
+function scorebug(m) {
+  const A = jugadorById(m.a), B = jugadorById(m.b), tA = teamById(A.equipoId), tB = teamById(B.equipoId);
+  return `<a class="scorebug" href="#/partido/${m.id}"><span class="sb-tag">LIGA ${m.liga} · FECHA ${m.jornada}</span>
+    <div class="sb-team">${crest(tA)}<div><b>${A.nombre}</b><small>${tA.nombre}</small></div></div>
+    <div class="sb-score"><b>${m.ft.a.goles}</b><i>-</i><b>${m.ft.b.goles}</b></div>
+    <div class="sb-team r">${crest(tB)}<div><b>${B.nombre}</b><small>${tB.nombre}</small></div></div>
+    <div class="sb-ver">Entretiempo ${m.ht.a.goles}-${m.ht.b.goles} · Ver estadísticas →</div></a>`;
+}
 
 // ============================================================
 //  VISTAS
@@ -71,7 +105,7 @@ function trophySVG(cls = "") {
 function slidesHTML() {
   const insc = todasInscripciones().length;
   const rm = teamByName("Real Madrid");
-  const q = PERFIL_QUICHA, s = q.stats;
+  const q = jugadorById("quichaproplayer");
   const cloud = [
     ["Real Madrid", "left:6%;top:4%;width:120px;height:120px;font-size:44px;animation-delay:-1s"],
     ["Manchester City", "left:50%;top:0;width:96px;height:96px;font-size:36px;animation-delay:-3s"],
@@ -79,26 +113,26 @@ function slidesHTML() {
     ["París Saint-Germain", "left:22%;top:38%;width:100px;height:100px;font-size:38px;animation-delay:-4s"],
     ["Bayern Múnich", "left:2%;top:68%;width:92px;height:92px;font-size:34px;animation-delay:-5s"],
     ["Liverpool", "left:46%;top:64%;width:116px;height:116px;font-size:42px;animation-delay:-1.5s"],
-  ].map(([n, st]) => { const t = teamByName(n); return `<span>${crest(t, "", "position:absolute;border-radius:28px;" + st)}</span>`; }).join("");
+  ].map(([n, st]) => { const t = teamByName(n); return `<span>${crest(t, "", "position:absolute;border-radius:24px;" + st)}</span>`; }).join("");
   const tiers = [[3, "Hasta 3★", "Equipos chicos"], [4, "3.5 a 4★", "Equipos medios"], [4.5, "4.5★", "Equipos top"], [5, "5★", "Los mejores del juego"]]
-    .map(([s2, t, d]) => `<div class="t"><span class="s">${stars(s2 === 4 ? 4 : s2)}</span><b>${$money(precioPorEstrellas(s2))}</b><small>${t} · ${d}</small></div>`).join("");
-  const lig = LIGAS.map(l => { const lead = tablaLiga(l.id)[0]; return `<a class="league-row" href="#/liga/${l.id}"><span class="L" style="background:${l.color}">${l.id}</span><div><b>${l.nombre}</b><small>Líder: ${lead.nombre}</small></div><span class="r">${lead.pts} pts</span></a>`; }).join("");
+    .map(([s2, t, d]) => `<div class="t"><span class="s">${stars(s2)}</span><b>${$money(precioPorEstrellas(s2))}</b><small>${t} · ${d}</small></div>`).join("");
+  const lig = LIGAS.map(l => { const lead = tablaLiga(l.id)[0]; return `<a class="league-row" style="--c:${l.color}" href="#/liga/${l.id}"><span class="L" style="background:${l.color}">${l.id}</span><div><b>${l.nombre}</b><small>Líder: ${lead.nombre}</small></div><span class="r">${lead.pts} pts</span></a>`; }).join("");
 
   return `
-  <div class="slide s1 active"><div class="wrap grid">
+  <div class="slide s1 active">${faroSVG()}<div class="wrap grid">
     <div>
       <span class="pill reveal-in">Temporada 1 · Inscripciones abiertas</span>
       <h1 class="reveal-in">El campeón<br>se lleva</h1>
       <div class="bignum reveal-in" data-count="${PREMIO}" data-money="1">${$money(PREMIO)}</div>
-      <p class="lead reveal-in">La liga de EA FC 27 de Necochea. 5 ligas, tablas en vivo y estadísticas de cada pase y cada gol.</p>
+      <p class="lead reveal-in">La liga de EA FC 27 de Necochea. 5 ligas, tablas al día y las estadísticas de cada partido, del entretiempo al final.</p>
       <div class="reveal-in"><div class="cd-label">Arranca en</div><div class="countdown" id="cd"></div>
       <div class="btns"><a class="btn primary" href="#/inscripcion">Quiero participar</a><a class="btn" href="#/liga/A">Ver tabla Liga A</a></div></div>
     </div>
     <div class="stage">
       <div class="glow"></div><div class="ring"></div>${playerSVG("h")}
-      <div class="chip c1"><b>${s.goles}</b><span>Goles</span></div>
-      <div class="chip c2 gold"><b>${s.precisionPases}%</b><span>Precisión de pases</span></div>
-      <div class="chip c3"><b>${s.victorias}V · ${s.empates}E</b><span>Invicto</span></div>
+      <div class="chip c1"><b>${q.gf}</b><span>Goles a favor</span></div>
+      <div class="chip c2"><b>${q.precision}%</b><span>Precisión de pases</span></div>
+      <div class="chip c3"><b>${q.g}V · ${q.e}E</b><span>Invicto</span></div>
       ${trophySVG("trophy-mini")}
     </div>
   </div></div>
@@ -116,21 +150,21 @@ function slidesHTML() {
 
   <div class="slide s3"><div class="wrap grid">
     <div>
-      <span class="pill reveal-in">Estadísticas completas</span>
-      <h1 class="reveal-in">Cada pase.<br>Cada gol.</h1>
-      <p class="lead reveal-in">Perfil de jugador con goles, asistencias, pases, regates, posesión, tarjetas y más. Mirá el de ejemplo.</p>
+      <span class="pill reveal-in">Como en el juego</span>
+      <h1 class="reveal-in">Entretiempo.<br>Final. Todo.</h1>
+      <p class="lead reveal-in">Cargamos las mismas estadísticas que muestra el juego: goles, posesión, tiros, pases, faltas, córners y más. Mirá el ejemplo de QuichaProPlayer.</p>
       <div class="stat4 reveal-in">
-        <div><b data-count="${s.goles}">${s.goles}</b><span>Goles</span></div><div><b data-count="${s.asistencias}">${s.asistencias}</b><span>Asistencias</span></div>
-        <div><b data-count="${s.pases}">${s.pases}</b><span>Pases</span></div><div><b data-count="${s.precisionPases}" data-suf="%">${s.precisionPases}%</b><span>Precisión de pases</span></div>
+        <div><b data-count="${q.gf}">${q.gf}</b><span>Goles a favor</span></div><div><b data-count="${q.gc}">${q.gc}</b><span>Goles en contra</span></div>
+        <div><b data-count="${q.posesion}" data-suf="%">${q.posesion}%</b><span>Posesión</span></div><div><b data-count="${q.precision}" data-suf="%">${q.precision}%</b><span>Precisión de pases</span></div>
       </div>
-      <div class="btns reveal-in"><a class="btn primary" href="#/jugador/quichaproplayer">Ver perfil completo</a></div>
+      <div class="btns reveal-in"><a class="btn primary" href="#/jugador/quichaproplayer">Ver perfil</a><a class="btn" href="#/partido/p10">Ver una ficha de partido</a></div>
     </div>
     <div class="stage" style="place-items:center">
       <div class="fcard">
-        <div class="top"><div><div class="ovr2">${q.ovr}</div><div class="pos2">DC</div>${crest(rm, "mini-crest")}</div><div class="pos2" style="text-align:right">NEC<br>LIGA A</div></div>
+        <div class="top"><div><div class="ovr2">${q.pts}</div><div class="pos2">PTS</div>${crest(rm, "mini-crest")}</div><div class="pos2" style="text-align:right">NEC<br>LIGA A</div></div>
         ${playerSVG("f")}
         <div class="nm">${q.nombre}</div>
-        <div class="fs"><span><b>${s.goles}</b>GOL</span><span><b>${s.asistencias}</b>AST</span><span><b>${s.precisionPases}</b>PAS</span><span><b>${q.habilidades[2][1]}</b>REG</span><span><b>${q.habilidades[6][1]}</b>VEL</span><span><b>${q.habilidades[1][1]}</b>PAC</span></div>
+        <div class="fs"><span><b>${q.gf}</b>GF</span><span><b>${q.gc}</b>GC</span><span><b>${q.posesion}</b>POS</span><span><b>${q.precision}</b>PAS</span><span><b>${q.tiros}</b>TIR</span><span><b>${q.pj}</b>PJ</span></div>
       </div>
     </div>
   </div></div>
@@ -157,6 +191,7 @@ function vistaInicio() {
       <div class="dots"><button class="dot on">Premio</button><button class="dot">Inscripción</button><button class="dot">Stats</button><button class="dot">Ligas</button></div>
       <div class="arrows"><button class="arrow" id="prev" aria-label="Anterior">‹</button><button class="arrow" id="next" aria-label="Siguiente">›</button></div>
     </div></div>
+    ${wavesSVG()}
     <div class="cprog"><i></i></div>
   </div>
 
@@ -168,6 +203,12 @@ function vistaInicio() {
       <div class="stat"><b>${$money(PREMIO)}</b><span>Premio al campeón</span></div>
     </div>
     <div style="margin-top:18px;max-width:560px"><div style="display:flex;justify-content:space-between;font-size:14px"><span><b>${insc}</b> de ${META_INSCRIPTOS} cupos</span><span class="muted">${pct}% completo</span></div><div class="progress"><i style="width:${pct}%"></i></div></div>
+  </div></section>
+
+  <section class="block reveal"><div class="wrap">
+    <div class="sec-title"><h2>Últimos <em>resultados</em></h2><a href="#/liga/A">Ver Liga A →</a></div>
+    <div class="sbs">${PARTIDOS_DEMO.slice(0, 4).map(scorebug).join("")}</div>
+    <p class="muted" style="margin-top:10px;font-size:13px">* Resultados de ejemplo. Entrá a cada partido para ver el entretiempo y el final.</p>
   </div></section>
 
   <section class="block reveal"><div class="wrap">
@@ -199,7 +240,7 @@ function vistaInicio() {
 
   <section class="block reveal"><div class="wrap">
     <div class="sec-title"><h2>Máximos <em>goleadores</em></h2></div>
-    <div class="table-wrap"><table><thead><tr><th>#</th><th class="l">Jugador</th><th class="l">Equipo</th><th>Liga</th><th>Goles</th></tr></thead><tbody>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th class="l">Jugador</th><th class="l">Equipo</th><th>Liga</th><th>Goles a favor</th></tr></thead><tbody>
       ${goleadores.map((p, i) => { const t = teamById(p.equipoId); return `<tr class="${i === 0 ? "top" : ""}"><td><span class="pos">${i + 1}</span></td>
         <td class="l"><a href="#/jugador/${p.id}"><b>${p.nombre}</b></a></td><td class="l"><div class="team-cell">${crest(t)}${t.nombre}</div></td>
         <td>${p.liga}</td><td class="pts">${p.gf}</td></tr>`; }).join("")}
@@ -222,26 +263,44 @@ function vistaLigas() {
       <p style="margin-top:12px" class="muted">Líder: <b style="color:var(--txt)">${t.nombre}</b> (${t.pts} pts)</p></a>`; }).join("")}</div></div>`;
 }
 
-function vistaLiga(id) {
+function vistaLiga(id, modo) {
   const liga = LIGAS.find(l => l.id === id) || LIGAS[0];
+  const stats = modo === "stats";
   const tabla = tablaLiga(liga.id);
   const pod = [tabla[1], tabla[0], tabla[2]];
   const cls = ["p2", "p1", "p3"], nums = ["2º", "1º", "3º"];
-  return `<div class="wrap fade" style="padding-top:40px">
-    <div class="sec-title"><h2>${liga.nombre} · <em>Posiciones</em></h2></div>
-    <div class="tabs">${LIGAS.map(l => `<a class="tab ${l.id === liga.id ? "active" : ""}" href="#/liga/${l.id}">${l.nombre}</a>`).join("")}</div>
-    <div class="podium">${pod.map((p, i) => { const t = teamById(p.equipoId); return `<a class="pod ${cls[i]}" href="#/jugador/${p.id}"><div class="m">${nums[i]}</div>${crest(t, "lg")}<b style="margin-top:8px">${p.nombre}</b><small>${t.nombre}</small><div class="pp">${p.pts} pts</div></a>`; }).join("")}</div>
-    <div class="table-wrap"><table><thead><tr>
-      <th>#</th><th class="l">Jugador</th><th class="l">Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pases</th><th>Tiros</th><th>Pos %</th><th>Forma</th><th>Pts</th></tr></thead><tbody>
-      ${tabla.map((p, i) => { const t = teamById(p.equipoId);
-        return `<tr class="${i < 2 ? "top" : i === tabla.length - 1 ? "last" : ""}"><td><span class="pos">${i + 1}</span></td>
-        <td class="l"><a href="#/jugador/${p.id}"><b>${p.nombre}</b></a></td>
+  const best = (fn, asc) => [...tabla].sort((a, b) => asc ? fn(a) - fn(b) : fn(b) - fn(a))[0];
+  const L = [
+    ["Mejor ataque", best(p => p.gf), p => p.gf + " goles"],
+    ["Mejor defensa", best(p => p.gc, true), p => p.gc + " en contra"],
+    ["Más posesión", best(p => p.posesion), p => p.posesion + "%"],
+    ["Mejor pase", best(p => p.precision), p => p.precision + "% de pases"],
+    ["Más tiros", best(p => p.tiros), p => p.tiros + " tiros"],
+  ].map(([t, p, f]) => `<a class="leader" href="#/jugador/${p.id}"><small>${t}</small><b>${f(p)}</b><span>${p.nombre}</span></a>`).join("");
+  const partidos = PARTIDOS_DEMO.filter(m => m.liga === liga.id);
+  const cabeza = stats
+    ? `<th>#</th><th class="l">Jugador</th><th>PJ</th><th>Tiros</th><th>Al arco</th><th>Pases</th><th>Pas %</th><th>Entradas</th><th>Faltas</th><th>Offs.</th><th>Córners</th><th>Amar.</th><th>Rojas</th><th>Atajadas</th>`
+    : `<th>#</th><th class="l">Jugador</th><th class="l">Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pos %</th><th>Pas %</th><th>Forma</th><th>Pts</th>`;
+  const filas = tabla.map((p, i) => { const t = teamById(p.equipoId);
+    const rc = `class="${!stats && i < 2 ? "top" : !stats && i === tabla.length - 1 ? "last" : ""}"`;
+    const nom = `<td class="l"><a href="#/jugador/${p.id}"><b>${p.nombre}</b></a></td>`;
+    return stats
+      ? `<tr><td><span class="pos">${i + 1}</span></td>${nom}<td>${p.pj}</td><td>${p.tiros}</td><td>${p.tirosArco}</td><td>${p.pases}</td><td>${p.precision}%</td><td>${p.entradas}</td><td>${p.faltas}</td><td>${p.offsides}</td><td>${p.corners}</td><td>${p.amarillas}</td><td>${p.rojas}</td><td>${p.atajadas}</td></tr>`
+      : `<tr ${rc}><td><span class="pos">${i + 1}</span></td>${nom}
         <td class="l"><div class="team-cell">${crest(t)}<span>${t.nombre}<small>${stars(t.estrellas)}</small></span></div></td>
         <td>${p.pj}</td><td>${p.g}</td><td>${p.e}</td><td>${p.p}</td><td>${p.gf}</td><td>${p.gc}</td><td>${p.dg > 0 ? "+" : ""}${p.dg}</td>
-        <td>${p.pases}</td><td>${p.tiros}</td><td>${p.posesion}</td>
-        <td><div class="form">${p.forma.map(f => `<i class="${f}">${f}</i>`).join("")}</div></td><td class="pts">${p.pts}</td></tr>`; }).join("")}
-    </tbody></table></div>
-    <p class="muted" style="margin-top:10px;font-size:13px">Verde: zona de ascenso · Rojo: zona de descenso · Datos de ejemplo.</p></div>`;
+        <td>${p.posesion}</td><td>${p.precision}</td>
+        <td><div class="form">${p.forma.map(f => `<i class="${f}">${f}</i>`).join("")}</div></td><td class="pts">${p.pts}</td></tr>`; }).join("");
+  return `<div class="wrap fade" style="padding-top:40px">
+    <div class="sec-title"><h2>${liga.nombre} · <em>${stats ? "Estadísticas" : "Posiciones"}</em></h2></div>
+    <div class="tabs">${LIGAS.map(l => `<a class="tab ${l.id === liga.id ? "active" : ""}" href="#/liga/${l.id}${stats ? "/stats" : ""}">${l.nombre}</a>`).join("")}</div>
+    ${stats ? "" : `<div class="podium">${pod.map((p, i) => { const t = teamById(p.equipoId); return `<a class="pod ${cls[i]}" href="#/jugador/${p.id}"><div class="m">${nums[i]}</div>${crest(t, "lg")}<b style="margin-top:8px">${p.nombre}</b><small>${t.nombre}</small><div class="pp">${p.pts} pts</div></a>`; }).join("")}</div>`}
+    <div class="leaders">${L}</div>
+    <div class="seg"><a class="${stats ? "" : "on"}" href="#/liga/${liga.id}">Posiciones</a><a class="${stats ? "on" : ""}" href="#/liga/${liga.id}/stats">Estadísticas</a></div>
+    <div class="table-wrap"><table><thead><tr>${cabeza}</tr></thead><tbody>${filas}</tbody></table></div>
+    <p class="muted" style="margin-top:10px;font-size:13px">${stats ? "Acumulado de la temporada, con los datos que muestra el juego al final de cada partido." : "Dorado: zona de ascenso · Rojo: zona de descenso."} Datos de ejemplo.</p>
+    ${partidos.length ? `<div class="sec-title" style="margin-top:36px"><h2>Últimos <em>partidos</em></h2></div><div class="sbs">${partidos.map(scorebug).join("")}</div>` : ""}
+  </div>`;
 }
 
 function vistaEquipos() {
@@ -265,49 +324,90 @@ function bar(label, val, max = 100, sufijo = "") {
   return `<div class="bar-row"><div class="top"><span>${label}</span><b>${val}${sufijo}</b></div><div class="bar"><i data-w="${Math.min(100, val / max * 100)}"></i></div></div>`;
 }
 
+// Radar de 6 ejes calculado con las estadísticas del juego
+function radarSVG(vals) {
+  const cx = 150, cy = 150, R = 105, n = vals.length;
+  const pt = (i, k) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [cx + Math.cos(a) * R * k, cy + Math.sin(a) * R * k]; };
+  const ring = k => vals.map((_, i) => pt(i, k).map(x => x.toFixed(1)).join(",")).join(" ");
+  const poly = vals.map((v, i) => pt(i, Math.max(0.04, v[1] / 100)).map(x => x.toFixed(1)).join(",")).join(" ");
+  const ejes = vals.map((v, i) => { const [x, y] = pt(i, 1.2); return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="#8fa2c8" font-size="12" font-family="Barlow Condensed,Arial" font-weight="700" letter-spacing="1">${v[0].toUpperCase()}</text>`; }).join("");
+  const rayos = vals.map((_, i) => { const [x, y] = pt(i, 1); return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#1b2c55"/>`; }).join("");
+  const puntos = vals.map((v, i) => { const [x, y] = pt(i, Math.max(0.04, v[1] / 100)); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="#ffc531"/>`; }).join("");
+  return `<svg viewBox="-50 0 400 300" role="img" aria-label="Radar de rendimiento">
+    ${[0.33, 0.66, 1].map(k => `<polygon points="${ring(k)}" fill="none" stroke="#1b2c55"/>`).join("")}${rayos}
+    <polygon points="${poly}" fill="rgba(255,197,49,.25)" stroke="#ffc531" stroke-width="2.5" stroke-linejoin="round"/>${puntos}${ejes}</svg>`;
+}
+
 function vistaJugador(id) {
-  const p = PARTICIPANTES.find(x => x.id === id);
+  const p = jugadorById(id);
   if (!p) return `<div class="wrap" style="padding:80px 20px"><h2>Jugador no encontrado</h2><a class="btn" href="#/jugadores">Volver</a></div>`;
   const t = teamById(p.equipoId);
-  if (id !== PERFIL_QUICHA.id) {
-    return `<div class="wrap fade"><div class="profile-head">${crest(t, "lg")}<div><h1>${p.nombre}</h1>
-      <div class="badges"><span class="badge g">Liga ${p.liga}</span><span class="badge y">${t.nombre} ${stars(t.estrellas)}</span></div></div></div>
-      <div class="kpis"><div class="kpi"><b>${p.pj}</b><span>Partidos</span></div><div class="kpi"><b>${p.g}</b><span>Ganados</span></div><div class="kpi"><b>${p.gf}</b><span>Goles</span></div><div class="kpi"><b>${p.pts}</b><span>Puntos</span></div></div>
-      <p class="muted" style="margin:20px 0">El perfil completo está en construcción. Mirá el de ejemplo: <a href="#/jugador/quichaproplayer" style="color:var(--green)">QuichaProPlayer</a>.</p></div>`;
-  }
-  const q = PERFIL_QUICHA, s = q.stats;
+  const pj = p.pj;
+  const clamp = v => Math.max(0, Math.min(100, Math.round(v)));
+  const radar = [
+    ["Ataque", clamp(p.gf / pj / 3.5 * 100)], ["Defensa", clamp(100 - p.gc / pj / 3 * 100)], ["Posesión", clamp(p.posesion)],
+    ["Pase", clamp(p.precision)], ["Puntería", clamp(p.tirosArco / p.tiros * 100)], ["Juego limpio", clamp(100 - (p.faltas / pj * 9 + p.amarillas * 4 + p.rojas * 20))],
+  ];
+  const ms = PARTIDOS_DEMO.filter(m => m.a === id || m.b === id);
   return `<div class="wrap fade">
     <div class="profile-head">${crest(t, "lg")}
-      <div><span class="pill">Líder · Liga A</span><h1 style="margin-top:8px">${q.nombre}</h1>
-        <div class="badges"><span class="badge y">${t.nombre} ${stars(t.estrellas)}</span><span class="badge">${q.posicionFav}</span><span class="badge">${q.plataforma}</span><span class="badge">${q.ciudad}</span><span class="badge g">${q.racha}</span><span class="badge">Desde ${q.desde}</span></div></div>
-      <div class="ovr"><b>${q.ovr}</b><span>NIVEL</span></div></div>
+      <div><span class="pill">Liga ${p.liga}</span><h1 style="margin-top:8px">${p.nombre}</h1>
+        <div class="badges"><span class="badge y">${t.nombre} ${stars(t.estrellas)}</span><span class="badge">${p.plataforma}</span><span class="badge">${p.ciudad}</span>${p.racha ? `<span class="badge g">${p.racha}</span>` : ""}<span class="badge">Desde ${p.desde}</span></div></div>
+      <div class="ovr"><b>${p.pts}</b><span>PUNTOS</span></div></div>
 
     <div class="kpis">
-      <div class="kpi"><b>${s.partidos}</b><span>Partidos</span></div><div class="kpi"><b style="color:var(--green)">${s.victorias}</b><span>Victorias</span></div>
-      <div class="kpi"><b>${s.empates}</b><span>Empates</span></div><div class="kpi"><b>${s.derrotas}</b><span>Derrotas</span></div>
-      <div class="kpi"><b style="color:var(--gold)">${s.goles}</b><span>Goles</span></div><div class="kpi"><b>${s.asistencias}</b><span>Asistencias</span></div>
-      <div class="kpi"><b>${s.mvp}</b><span>MVP</span></div><div class="kpi"><b>${s.vallasInvictas}</b><span>Vallas invictas</span></div>
+      <div class="kpi"><b>${p.pj}</b><span>Jugados</span></div><div class="kpi"><b style="color:var(--win)">${p.g}</b><span>Ganados</span></div>
+      <div class="kpi"><b>${p.e}</b><span>Empatados</span></div><div class="kpi"><b style="color:var(--red)">${p.p}</b><span>Perdidos</span></div>
+      <div class="kpi"><b class="accent">${p.gf}</b><span>Goles a favor</span></div><div class="kpi"><b>${p.gc}</b><span>Goles en contra</span></div>
+      <div class="kpi"><b>${p.dg > 0 ? "+" : ""}${p.dg}</b><span>Diferencia</span></div><div class="kpi"><b>${pm(p.gf, pj)}</b><span>Goles por partido</span></div>
     </div>
 
-    <div class="pgrid" style="margin-top:20px">
-      <div class="card"><h3 class="sub">Habilidades</h3>${q.habilidades.map(([n, v]) => bar(n, v)).join("")}</div>
-      <div class="card"><h3 class="sub">Ataque</h3>
-        ${bar("Precisión de tiros", s.precisionTiros, 100, "%")}${bar("Tiros al arco", s.tirosAlArco, s.tiros)}
-        ${bar("Regates exitosos", s.regatesExitosos, s.regates)}
-        <div class="kpis" style="margin-top:14px"><div class="kpi"><b>${s.tiros}</b><span>Tiros</span></div><div class="kpi"><b>${s.xG}</b><span>Goles esperados (xG)</span></div><div class="kpi"><b>${s.golesDeCabeza}</b><span>De cabeza</span></div><div class="kpi"><b>${s.golesDePenal}</b><span>De penal</span></div><div class="kpi"><b>${s.golesDeTiroLibre}</b><span>Tiro libre</span></div></div></div>
-      <div class="card"><h3 class="sub">Pases</h3>
-        ${bar("Precisión de pases", s.precisionPases, 100, "%")}${bar("Pases completados", s.pasesCompletados, s.pases)}
-        <div class="kpis" style="margin-top:14px"><div class="kpi"><b>${s.pases}</b><span>Pases</span></div><div class="kpi"><b>${s.pasesClave}</b><span>Pases clave</span></div><div class="kpi"><b>${s.pasesProgresivos}</b><span>Progresivos</span></div></div></div>
+    <div class="pgrid" style="margin-top:16px">
+      <div class="card"><h3 class="sub">Perfil de juego</h3><div class="radar-wrap">${radarSVG(radar)}</div></div>
+      <div class="card"><h3 class="sub">Ataque y posesión</h3>
+        ${bar("Posesión media", p.posesion, 100, "%")}${bar("Precisión de pases", p.precision, 100, "%")}${bar("Tiros al arco", p.tirosArco, p.tiros)}
+        <div class="kpis" style="margin-top:14px"><div class="kpi"><b>${p.tiros}</b><span>Tiros</span></div><div class="kpi"><b>${p.tirosArco}</b><span>Al arco</span></div><div class="kpi"><b>${p.pases}</b><span>Pases</span></div><div class="kpi"><b>${p.corners}</b><span>Córners</span></div><div class="kpi"><b>${p.offsides}</b><span>Offsides</span></div></div></div>
       <div class="card"><h3 class="sub">Defensa y disciplina</h3>
-        ${bar("Posesión media", s.posesion, 100, "%")}
-        <div class="kpis" style="margin-top:14px"><div class="kpi"><b>${s.recuperaciones}</b><span>Recuperaciones</span></div><div class="kpi"><b>${s.intercepciones}</b><span>Intercepciones</span></div><div class="kpi"><b>${s.entradas}</b><span>Entradas</span></div><div class="kpi"><b>${s.faltasCometidas}</b><span>Faltas</span></div><div class="kpi"><b style="color:var(--gold)">${s.amarillas}</b><span>Amarillas</span></div><div class="kpi"><b style="color:var(--red)">${s.rojas}</b><span>Rojas</span></div></div></div>
+        <div class="kpis"><div class="kpi"><b>${p.gc}</b><span>Goles en contra</span></div><div class="kpi"><b>${p.atajadas}</b><span>Atajadas</span></div><div class="kpi"><b>${p.entradas}</b><span>Entradas</span></div><div class="kpi"><b>${p.faltas}</b><span>Faltas</span></div><div class="kpi"><b class="accent">${p.amarillas}</b><span>Amarillas</span></div><div class="kpi"><b style="color:var(--red)">${p.rojas}</b><span>Rojas</span></div></div></div>
+      <div class="card"><h3 class="sub">Promedio por partido</h3>
+        <div class="kpis"><div class="kpi"><b>${pm(p.gf, pj)}</b><span>Goles a favor</span></div><div class="kpi"><b>${pm(p.gc, pj)}</b><span>Goles en contra</span></div><div class="kpi"><b>${pm(p.tiros, pj)}</b><span>Tiros</span></div><div class="kpi"><b>${pm(p.pases, pj)}</b><span>Pases</span></div><div class="kpi"><b>${pm(p.faltas, pj)}</b><span>Faltas</span></div><div class="kpi"><b>${pm(p.corners, pj)}</b><span>Córners</span></div></div></div>
     </div>
 
     <h3 class="sub" style="margin-top:26px">Últimos partidos</h3>
-    <div class="table-wrap"><table><thead><tr><th>Fecha</th><th class="l">Rival</th><th>Resultado</th><th></th><th>Goles</th><th>Asist.</th></tr></thead><tbody>
-      ${q.partidos.map(m => `<tr><td>${m.j}</td><td class="l"><b>${m.rival}</b></td><td>${m.res}</td><td><div class="form"><i class="${m.r}">${m.r}</i></div></td><td>${m.goles}</td><td>${m.asist}</td></tr>`).join("")}
-    </tbody></table></div>
+    ${ms.length ? `<div class="table-wrap"><table><thead><tr><th>Fecha</th><th class="l">Rival</th><th>Resultado</th><th></th><th>Entretiempo</th><th></th></tr></thead><tbody>
+      ${ms.map(m => { const r = resultadoPara(m, id), soyA = m.a === id, h = soyA ? [m.ht.a.goles, m.ht.b.goles] : [m.ht.b.goles, m.ht.a.goles];
+        return `<tr><td>${m.jornada}</td><td class="l"><a href="#/jugador/${r.rival}"><b>${jugadorById(r.rival).nombre}</b></a></td><td class="pts">${r.mi} - ${r.su}</td><td><div class="form"><i class="${r.r}">${r.r}</i></div></td><td>${h[0]} - ${h[1]}</td><td><a class="accent" href="#/partido/${m.id}">Ver ficha →</a></td></tr>`; }).join("")}
+    </tbody></table></div>` : `<p class="muted">Todavía no hay partidos cargados para este jugador.</p>`}
     <p class="muted" style="margin:12px 0 0;font-size:13px">* Perfil de ejemplo con datos ficticios.</p></div>`;
+}
+
+// ---------- FICHA DE PARTIDO (entretiempo y final) ----------
+function vistaPartido(id, modo) {
+  const m = PARTIDOS_DEMO.find(x => x.id === id);
+  if (!m) return `<div class="wrap" style="padding:80px 20px"><h2>Partido no encontrado</h2><a class="btn" href="#/liga/A">Volver</a></div>`;
+  const ht = modo === "ht", S = ht ? m.ht : m.ft;
+  const A = jugadorById(m.a), B = jugadorById(m.b), tA = teamById(A.equipoId), tB = teamById(B.equipoId);
+  // [campo, etiqueta, sufijo, "menos es mejor"]
+  const filas = [["pos", "Posesión", "%"], ["tiros", "Tiros"], ["tirosArco", "Tiros al arco"], ["pases", "Pases"], ["precision", "Precisión de pases", "%"],
+    ["entradas", "Entradas"], ["faltas", "Faltas", "", 1], ["offsides", "Offsides", "", 1], ["corners", "Córners"], ["amarillas", "Tarjetas amarillas", "", 1], ["rojas", "Tarjetas rojas", "", 1], ["atajadas", "Atajadas"]];
+  const rows = filas.map(([k, et, suf = "", menos]) => {
+    const a = S.a[k], b = S.b[k], tot = (a + b) || 1;
+    const gana = a === b ? 0 : (menos ? (a < b ? 1 : 2) : (a > b ? 1 : 2));
+    return `<div class="mrow"><div class="v ${gana === 1 ? "w" : ""}">${a}${suf}</div>
+      <div><div class="mc">${et}</div><div class="bars"><div class="half l"><i class="${gana === 1 ? "w" : ""}" style="width:${a / tot * 100}%"></i></div><div class="half"><i class="${gana === 2 ? "w" : ""}" style="width:${b / tot * 100}%"></i></div></div></div>
+      <div class="v ${gana === 2 ? "w" : ""}">${b}${suf}</div></div>`; }).join("");
+  const base = `#/partido/${m.id}`;
+  return `<div class="wrap fade">
+    <div class="mhead">
+      <a class="tm" href="#/jugador/${A.id}">${crest(tA, "lg")}<b>${A.nombre}</b><small>${tA.nombre}</small></a>
+      <div class="res"><div class="sc"><b>${S.a.goles}</b><i>-</i><b>${S.b.goles}</b></div><small>${ht ? "Entretiempo" : "Final"} · Liga ${m.liga} · Fecha ${m.jornada}</small></div>
+      <a class="tm" href="#/jugador/${B.id}">${crest(tB, "lg")}<b>${B.nombre}</b><small>${tB.nombre}</small></a>
+    </div>
+    <div style="text-align:center"><div class="seg"><a class="${ht ? "" : "on"}" href="${base}">Final</a><a class="${ht ? "on" : ""}" href="${base}/ht">Entretiempo</a></div></div>
+    <div class="card" style="max-width:820px;margin:0 auto">${rows}</div>
+    <p class="muted" style="text-align:center;margin-top:12px;font-size:13px">Estadísticas como las muestra el juego. Partido de ejemplo con datos ficticios.</p>
+    <div style="text-align:center;margin-top:14px"><a class="btn small" href="#/liga/${m.liga}">← Volver a la Liga ${m.liga}</a></div>
+  </div>`;
 }
 
 // ---------- INSCRIPCIÓN ----------
@@ -395,7 +495,7 @@ function vistaAdmin() {
   // plataformas
   const plats = {}; all.forEach(x => plats[x.plataforma] = (plats[x.plataforma] || 0) + 1);
   const platList = Object.entries(plats).sort((a, b) => b[1] - a[1]);
-  const colores = ["#00ff87", "#3b82f6", "#8b5cf6", "#ffc83d", "#ff4d6d"];
+  const colores = ["#ffc531", "#3ee6ff", "#8b7bff", "#35e08a", "#ff4d5e"];
   let acc = 0;
   const conic = platList.map(([, c], i) => { const a = acc / n * 100; acc += c; return `${colores[i % 5]} ${a}% ${acc / n * 100}%`; }).join(",");
 
@@ -412,7 +512,7 @@ function vistaAdmin() {
   const heat = `<div class="hh"></div>${TURNOS.map(tn => `<div class="hh">${ICONO_TURNO[tn]} ${tn}</div>`).join("")}` +
     DIAS.map(d => `<div class="hd">${d}</div>` + TURNOS.map(tn => {
       const c = cnt[d + "|" + tn] || 0, a = c / maxH, best = mejores[0].d === d && mejores[0].tn === tn;
-      return `<div class="${best ? "best" : ""}" style="background:rgba(0,255,135,${(0.05 + a * 0.8).toFixed(2)});color:${a > 0.55 ? "#04101f" : "var(--txt)"}">${c}</div>`; }).join("")).join("");
+      return `<div class="${best ? "best" : ""}" style="background:rgba(255,197,49,${(0.05 + a * 0.8).toFixed(2)});color:${a > 0.55 ? "#04101f" : "var(--txt)"}">${c}</div>`; }).join("")).join("");
   const turnoTot = TURNOS.map(tn => ({ tn, c: slots.filter(s => s.tn === tn).reduce((a, s) => a + s.c, 0) }));
   const maxTurno = Math.max(1, ...turnoTot.map(x => x.c));
   const diaTot = DIAS.map(d => ({ d, c: slots.filter(s => s.d === d).reduce((a, s) => a + s.c, 0) }));
@@ -432,7 +532,7 @@ function vistaAdmin() {
   return `<div class="wrap fade" style="padding-top:40px">
     <div class="sec-title"><h2>Panel de <em>administrador</em></h2><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="muted" style="font-size:13px">${ADMIN_EMAIL}</span><button class="btn small" id="csv">⬇ Exportar CSV</button><button class="btn small" id="salir">Cerrar sesión</button></div></div>
     <div class="kpis">
-      <div class="kpi"><b style="color:var(--green)">${n}</b><span>Inscriptos (${reales} reales + ${n - reales} de ejemplo)</span></div>
+      <div class="kpi"><b style="color:var(--win)">${n}</b><span>Inscriptos (${reales} reales + ${n - reales} de ejemplo)</span></div>
       <div class="kpi"><b class="gold">${$money(total)}</b><span>Recaudación total</span></div>
       <div class="kpi"><b>${cubre}%</b><span>del premio cubierto (${$money(PREMIO)})</span></div>
       <div class="kpi"><b>${$money(prom)}</b><span>Ticket promedio</span></div>
@@ -463,7 +563,7 @@ function vistaAdmin() {
         <div>${platList.map(([nom, c], i) => `<div class="lg-item"><i style="background:${colores[i % 5]}"></i>${nom}: <b>${c}</b> (${Math.round(c / n * 100)}%)</div>`).join("")}</div></div>
       </div>
       <div class="card"><h3 class="sub">Inscripciones por día</h3>
-        <div style="display:flex;align-items:flex-end;gap:8px;height:150px">${dias7.map(d => `<div style="flex:1;text-align:center"><div style="height:${Math.max(4, d.c / max7 * 110)}px;background:linear-gradient(180deg,var(--green),var(--blue));border-radius:8px 8px 3px 3px"></div><b style="font-size:13px">${d.c}</b><div class="muted" style="font-size:10px">${d.l}</div></div>`).join("")}</div>
+        <div style="display:flex;align-items:flex-end;gap:8px;height:150px">${dias7.map(d => `<div style="flex:1;text-align:center"><div style="height:${Math.max(4, d.c / max7 * 110)}px;background:linear-gradient(180deg,var(--accent),var(--sea));border-radius:3px 3px 0 0"></div><b style="font-size:13px">${d.c}</b><div class="muted" style="font-size:10px">${d.l}</div></div>`).join("")}</div>
       </div>
     </div>
 
@@ -637,15 +737,16 @@ async function cerrarSesion() {
 function render() {
   clearTimers();
   const hash = location.hash.replace(/^#\/?/, "");
-  const [ruta, param] = hash.split("/");
+  const [ruta, param, param2] = hash.split("/");
   let html = "";
   switch (ruta) {
     case "": html = vistaInicio(); break;
     case "ligas": html = vistaLigas(); break;
-    case "liga": html = vistaLiga((param || "A").toUpperCase()); break;
+    case "liga": html = vistaLiga((param || "A").toUpperCase(), param2); break;
     case "equipos": html = vistaEquipos(); break;
     case "jugadores": html = vistaJugadores(); break;
     case "jugador": html = vistaJugador(param); break;
+    case "partido": html = vistaPartido(param, param2); break;
     case "inscripcion": html = vistaInscripcion(); break;
     case "admin": html = ES_ADMIN ? vistaAdmin() : vistaLogin(); break;
     case "login": html = ES_ADMIN ? vistaAdmin() : vistaLogin(); break;
@@ -654,8 +755,8 @@ function render() {
   app.innerHTML = html;
   if (ruta === "inscripcion") iniciarInscripcion();
   if (ruta === "admin" || ruta === "login") { if (ES_ADMIN) iniciarAdmin(); else iniciarLogin(); }
-  if (!ruta || !["ligas", "liga", "equipos", "jugadores", "jugador", "inscripcion", "admin", "login"].includes(ruta)) { iniciarCarrusel(); iniciarCuentaRegresiva(); countUp(app.querySelector(".slide.active")); }
-  document.querySelectorAll("#menu a").forEach(a => a.classList.toggle("active", a.dataset.r === (ruta === "liga" ? "ligas" : ruta === "jugador" ? "jugadores" : ruta)));
+  if (!ruta || !["ligas", "liga", "equipos", "jugadores", "jugador", "partido", "inscripcion", "admin", "login"].includes(ruta)) { iniciarCarrusel(); iniciarCuentaRegresiva(); countUp(app.querySelector(".slide.active")); }
+  document.querySelectorAll("#menu a").forEach(a => a.classList.toggle("active", a.dataset.r === (ruta === "liga" || ruta === "partido" ? "ligas" : ruta === "jugador" ? "jugadores" : ruta)));
   window.scrollTo(0, 0);
   iniciarReveal();
   requestAnimationFrame(() => setTimeout(() => document.querySelectorAll(".bar i[data-w]").forEach(b => b.style.width = b.dataset.w + "%"), 60));
