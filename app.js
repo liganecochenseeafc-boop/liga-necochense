@@ -17,7 +17,6 @@ let LIVE = false;
 let JUGADORES = PARTICIPANTES;
 let PARTIDOS = [...PARTIDOS_DEMO, ...PARTIDOS_PROG_DEMO];
 let LIVE_INSCRIPTOS = [];
-let EQUIPOS_OCUPADOS = new Set();
 const EJEMPLO = _q; // QuichaProPlayer, el jugador de ejemplo de la portada
 const jugadorOr = id => jugadorById(id) || { id, nombre: "Jugador retirado", equipoId: 0, liga: "", plataforma: "" };
 const esJugado = m => !!(m && m.ft);
@@ -36,7 +35,8 @@ function getInscriptos() { try { return JSON.parse(localStorage.getItem("inscrip
 function addInscripto(x) { const a = getInscriptos(); a.push(x); try { localStorage.setItem("inscriptos", JSON.stringify(a)); } catch (e) {} }
 function todasInscripciones() {
   if (LIVE) return LIVE_INSCRIPTOS;
-  return [...DEMO_INSCRIPTOS.map(x => ({ ...x, demo: true })), ...getInscriptos().map(x => ({ ...x, demo: false }))];
+  const dem = DEMO_INSCRIPTOS.map((x, i) => { const liga = TORNEOS[i % 5].id; return { ...x, liga, precio: precioInsc(torneoById(liga), x.equipoId), demo: true }; });
+  return [...dem, ...getInscriptos().map(x => ({ ...x, demo: false }))];
 }
 // Cantidad de inscriptos que se muestra al público (sin contar las rechazadas)
 function totalInscriptos() { return todasInscripciones().filter(x => x.estado !== "rechazada").length; }
@@ -108,8 +108,8 @@ function resultadoPara(m, id) {
 }
 const jugadorById = id => JUGADORES.find(x => x.id === id);
 function scorebug(m) {
-  const A = jugadorOr(m.a), B = jugadorOr(m.b), tA = teamById(A.equipoId), tB = teamById(B.equipoId);
-  return `<a class="scorebug" href="#/partido/${m.id}"><span class="sb-tag">LIGA ${m.liga} · FECHA ${m.jornada}</span>
+  const A = jugadorOr(m.a), B = jugadorOr(m.b), tA = equipoDe(A), tB = equipoDe(B);
+  return `<a class="scorebug" href="#/partido/${m.id}"><span class="sb-tag">${esc(nombreLiga(m.liga))} · FECHA ${m.jornada}</span>
     <div class="sb-team">${crest(tA)}<div><b>${esc(A.nombre)}</b><small>${tA.nombre}</small></div></div>
     <div class="sb-score"><b>${m.ft.a.goles}</b><i>-</i><b>${m.ft.b.goles}</b></div>
     <div class="sb-team r">${crest(tB)}<div><b>${esc(B.nombre)}</b><small>${tB.nombre}</small></div></div>
@@ -117,225 +117,15 @@ function scorebug(m) {
 }
 const fechaCorta = iso => iso ? new Date(iso).toLocaleString("es-AR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "A coordinar";
 
-// ============================================================
-//  VISTAS
-// ============================================================
-function slidesHTML() {
-  const insc = totalInscriptos();
-  const rm = teamByName("Real Madrid");
-  const q = EJEMPLO;
-  const cloud = [
-    ["Real Madrid", "left:6%;top:4%;width:120px;height:120px;font-size:44px;animation-delay:-1s"],
-    ["Manchester City", "left:50%;top:0;width:96px;height:96px;font-size:36px;animation-delay:-3s"],
-    ["FC Barcelona", "left:68%;top:30%;width:130px;height:130px;font-size:48px;animation-delay:-2s"],
-    ["París Saint-Germain", "left:22%;top:38%;width:100px;height:100px;font-size:38px;animation-delay:-4s"],
-    ["Bayern Múnich", "left:2%;top:68%;width:92px;height:92px;font-size:34px;animation-delay:-5s"],
-    ["Liverpool", "left:46%;top:64%;width:116px;height:116px;font-size:42px;animation-delay:-1.5s"],
-  ].map(([n, st]) => { const t = teamByName(n); return `<span>${crest(t, "", "position:absolute;border-radius:24px;" + st)}</span>`; }).join("");
-  const tiers = [[3, "Hasta 3★", "Equipos chicos"], [4, "3.5 a 4★", "Equipos medios"], [4.5, "4.5★", "Equipos top"], [5, "5★", "Los mejores del juego"]]
-    .map(([s2, t, d]) => `<div class="t"><span class="s">${stars(s2)}</span><b>${$money(precioPorEstrellas(s2))}</b><small>${t} · ${d}</small></div>`).join("");
-  const lig = LIGAS.map(l => { const tb = tablaLiga(l.id), lead = tb[0];
-    return `<a class="league-row" style="--c:${l.color}" href="#/liga/${l.id}"><span class="L" style="background:${l.color}">${l.id}</span><div><b>${l.nombre}</b><small>${lead ? "Líder: " + esc(lead.nombre) : "Sin jugadores todavía"}</small></div><span class="r">${lead ? lead.pts + " pts" : tb.length + " jug."}</span></a>`; }).join("");
 
-  return `
-  <div class="slide s1 active">${faroSVG()}<div class="wrap grid">
-    <div>
-      <span class="pill reveal-in">Temporada 1 · Inscripciones abiertas</span>
-      <h1 class="reveal-in">El campeón<br>se lleva</h1>
-      <div class="bignum reveal-in" data-count="${PREMIO}" data-money="1">${$money(PREMIO)}</div>
-      <p class="lead reveal-in">La liga de EA FC 27 de Necochea. 5 ligas, tablas al día y las estadísticas de cada partido, del entretiempo al final.</p>
-      <div class="reveal-in"><div class="cd-label">Arranca en</div><div class="countdown" id="cd"></div>
-      <div class="btns"><a class="btn primary" href="#/inscripcion">Quiero participar</a><a class="btn" href="#/liga/A">Ver tabla Liga A</a></div></div>
-    </div>
-    <div class="stage">
-      <div class="glow"></div><div class="ring"></div>${playerSVG("h")}
-      <div class="chip c1"><b>${q.gf}</b><span>Goles a favor</span></div>
-      <div class="chip c2"><b>${q.precision}%</b><span>Precisión de pases</span></div>
-      <div class="chip c3"><b>${q.g}V · ${q.e}E</b><span>Invicto</span></div>
-      ${trophySVG("trophy-mini")}
-    </div>
-  </div></div>
 
-  <div class="slide s2"><div class="wrap grid">
-    <div>
-      <span class="pill reveal-in">${insc} jugadores ya se anotaron</span>
-      <h1 class="reveal-in">Elegí tu equipo.<br>Pagás por estrellas.</h1>
-      <p class="lead reveal-in">Cuantas más estrellas tiene tu equipo, más sale la inscripción. Todos compiten por el mismo premio.</p>
-      <div class="tiers4 reveal-in">${tiers}</div>
-      <div class="btns reveal-in"><a class="btn primary" href="#/inscripcion">Elegir mi equipo</a><a class="btn" href="#/equipos">Ver todos</a></div>
-    </div>
-    <div class="crest-cloud">${cloud}</div>
-  </div></div>
 
-  <div class="slide s3"><div class="wrap grid">
-    <div>
-      <span class="pill reveal-in">Como en el juego</span>
-      <h1 class="reveal-in">Entretiempo.<br>Final. Todo.</h1>
-      <p class="lead reveal-in">Cargamos las mismas estadísticas que muestra el juego: goles, posesión, tiros, pases, faltas, córners y más. Mirá el ejemplo de QuichaProPlayer.</p>
-      <div class="stat4 reveal-in">
-        <div><b data-count="${q.gf}">${q.gf}</b><span>Goles a favor</span></div><div><b data-count="${q.gc}">${q.gc}</b><span>Goles en contra</span></div>
-        <div><b data-count="${q.posesion}" data-suf="%">${q.posesion}%</b><span>Posesión</span></div><div><b data-count="${q.precision}" data-suf="%">${q.precision}%</b><span>Precisión de pases</span></div>
-      </div>
-      <div class="btns reveal-in">${LIVE
-        ? `<a class="btn primary" href="#/ligas">Ver las ligas</a><a class="btn" href="#/inscripcion">Quiero participar</a>`
-        : `<a class="btn primary" href="#/jugador/quichaproplayer">Ver perfil</a><a class="btn" href="#/partido/p10">Ver una ficha de partido</a>`}</div>
-      ${LIVE ? `<p class="muted" style="margin-top:12px;font-size:13px">* La carta y los números de esta diapositiva son de un jugador de ejemplo.</p>` : ""}
-    </div>
-    <div class="stage" style="place-items:center">
-      <div class="fcard">
-        <div class="top"><div><div class="ovr2">${q.pts}</div><div class="pos2">PTS</div>${crest(rm, "mini-crest")}</div><div class="pos2" style="text-align:right">NEC<br>LIGA A</div></div>
-        ${playerSVG("f")}
-        <div class="nm">${q.nombre}</div>
-        <div class="fs"><span><b>${q.gf}</b>GF</span><span><b>${q.gc}</b>GC</span><span><b>${q.posesion}</b>POS</span><span><b>${q.precision}</b>PAS</span><span><b>${q.tiros}</b>TIR</span><span><b>${q.pj}</b>PJ</span></div>
-      </div>
-    </div>
-  </div></div>
-
-  <div class="slide s4"><div class="wrap grid">
-    <div>
-      <span class="pill reveal-in">5 ligas · 1 solo campeón</span>
-      <h1 class="reveal-in">De la Liga E<br>a la Liga A</h1>
-      <p class="lead reveal-in">Jugás contra gente de tu nivel y peleás por subir. Ascensos, descensos y un premio de ${$money(PREMIO)}.</p>
-      <div class="btns reveal-in"><a class="btn primary" href="#/ligas">Ver las ligas</a></div>
-    </div>
-    <div class="league-list reveal-in">${lig}</div>
-  </div></div>`;
-}
-
-function vistaInicio() {
-  const insc = totalInscriptos();
-  const pct = Math.min(100, Math.round(insc / META_INSCRIPTOS * 100));
-  const goleadores = [...JUGADORES].filter(p => p.liga).sort((a, b) => b.gf - a.gf).slice(0, 5);
-  const jugados = PARTIDOS.filter(esJugado).slice(0, 4);
-  return `
-  <div class="carousel" id="carousel">
-    ${slidesHTML()}
-    <div class="ctrls"><div class="wrap">
-      <div class="dots"><button class="dot on">Premio</button><button class="dot">Inscripción</button><button class="dot">Stats</button><button class="dot">Ligas</button></div>
-      <div class="arrows"><button class="arrow" id="prev" aria-label="Anterior">‹</button><button class="arrow" id="next" aria-label="Siguiente">›</button></div>
-    </div></div>
-    ${wavesSVG()}
-    <div class="cprog"><i></i></div>
-  </div>
-
-  <section class="block reveal"><div class="wrap">
-    <div class="stats-row">
-      <div class="stat"><b data-count="5">5</b><span>Ligas (A a la E)</span></div>
-      <div class="stat"><b data-count="${EQUIPOS.length}">${EQUIPOS.length}</b><span>Equipos disponibles</span></div>
-      <div class="stat"><b data-count="${insc}">${insc}</b><span>Jugadores inscriptos</span></div>
-      <div class="stat"><b>${$money(PREMIO)}</b><span>Premio al campeón</span></div>
-    </div>
-    <div style="margin-top:18px;max-width:560px"><div style="display:flex;justify-content:space-between;font-size:14px"><span><b>${insc}</b> de ${META_INSCRIPTOS} cupos</span><span class="muted">${pct}% completo</span></div><div class="progress"><i style="width:${pct}%"></i></div></div>
-  </div></section>
-
-  <section class="block reveal"><div class="wrap">
-    <div class="sec-title"><h2>Últimos <em>resultados</em></h2><a href="#/liga/A">Ver Liga A →</a></div>
-    ${jugados.length
-      ? `<div class="sbs">${jugados.map(scorebug).join("")}</div>${LIVE ? "" : `<p class="muted" style="margin-top:10px;font-size:13px">* Resultados de ejemplo. Entrá a cada partido para ver el entretiempo y el final.</p>`}`
-      : `<div class="card"><p class="muted">Todavía no se jugó ningún partido. Los resultados van a aparecer acá apenas arranque la temporada.</p></div>`}
-  </div></section>
-
-  <section class="block reveal"><div class="wrap">
-    <div class="sec-title"><h2>Cómo <em>funciona</em></h2></div>
-    <div class="steps">
-      <div class="step"><div class="n">01</div><h3>Registrate</h3><p class="muted">Creás tu perfil con tu nombre de jugador y tu ID de consola.</p></div>
-      <div class="step"><div class="n">02</div><h3>Elegí equipo</h3><p class="muted">Cuantas más estrellas, más sale la inscripción.</p></div>
-      <div class="step"><div class="n">03</div><h3>Elegí tus horarios</h3><p class="muted">Decís qué días y turnos te quedan bien y armamos el fixture.</p></div>
-      <div class="step"><div class="n">04</div><h3>Jugá y ganá</h3><p class="muted">Sumá puntos, subí de liga y peleá por el millón.</p></div>
-    </div>
-  </div></section>
-
-  <section class="block reveal"><div class="wrap">
-    <div class="sec-title"><h2>Elegí tu <em>liga</em></h2><a href="#/ligas">Ver todas →</a></div>
-    <div class="cards">${LIGAS.map(l => `
-      <a class="card hover league-card" href="#/liga/${l.id}" style="border-top:3px solid ${l.color}">
-        <span class="big">${l.id}</span><h3>${l.nombre}</h3><p class="muted">${l.desc}</p>
-        <p style="margin-top:10px;font-weight:700;color:${l.color}">Ver tabla →</p></a>`).join("")}</div>
-  </div></section>
-
-  <section class="block reveal"><div class="wrap">
-    <div class="sec-title"><h2>Cuánto sale <em>inscribirse</em></h2><a href="#/equipos">Ver equipos →</a></div>
-    <div class="tier">
-      ${[[3, "Hasta 3 estrellas"], [4, "3.5 a 4 estrellas"], [4.5, "4.5 estrellas"], [5, "5 estrellas"]].map(([s, t]) => `
-        <div class="card ${s === 5 ? "best" : ""}"><div class="stars">${stars(s)}</div><div class="muted">${t}</div>
-        <div class="price">${$money(precioPorEstrellas(s))}</div></div>`).join("")}
-    </div>
-  </div></section>
-
-  <section class="block reveal"><div class="wrap">
-    <div class="sec-title"><h2>Máximos <em>goleadores</em></h2></div>
-    ${goleadores.length ? `<div class="table-wrap"><table><thead><tr><th>#</th><th class="l">Jugador</th><th class="l">Equipo</th><th>Liga</th><th>Goles a favor</th></tr></thead><tbody>
-      ${goleadores.map((p, i) => { const t = teamById(p.equipoId); return `<tr class="${i === 0 ? "top" : ""}"><td><span class="pos">${i + 1}</span></td>
-        <td class="l"><a href="#/jugador/${p.id}"><b>${esc(p.nombre)}</b></a></td><td class="l"><div class="team-cell">${crest(t)}${t.nombre}</div></td>
-        <td>${p.liga}</td><td class="pts">${p.gf}</td></tr>`; }).join("")}
-    </tbody></table></div>${LIVE ? "" : `<p class="muted" style="margin-top:10px;font-size:13px">* Datos de ejemplo hasta que arranque la temporada.</p>`}`
-      : `<div class="card"><p class="muted">Todavía no hay jugadores en las ligas.</p></div>`}
-  </div></section>
-
-  <section class="block reveal"><div class="wrap">
-    <div class="cta-band"><div style="position:relative;z-index:1"><h3>¿Listo para jugar?</h3><p class="muted" style="margin-top:6px">Anotate hoy y elegí tus horarios. Quedan ${Math.max(0, META_INSCRIPTOS - insc)} cupos.</p></div>
-    <a class="btn primary" style="position:relative;z-index:1" href="#/inscripcion">Inscribirme ahora</a></div>
-  </div></section>`;
-}
-
-function vistaLigas() {
-  return `<div class="wrap fade" style="padding-top:40px"><div class="sec-title"><h2>Las 5 <em>ligas</em></h2></div>
-  <div class="cards">${LIGAS.map(l => {
-    const tb = tablaLiga(l.id), t = tb[0];
-    return `<a class="card hover league-card" href="#/liga/${l.id}" style="border-top:3px solid ${l.color}">
-      <span class="big">${l.id}</span><h3>${l.nombre}</h3><p class="muted">${l.desc}</p>
-      <p style="margin-top:12px" class="muted">${t ? `Líder: <b style="color:var(--txt)">${esc(t.nombre)}</b> (${t.pts} pts)` : "Todavía sin jugadores"} · ${tb.length} jugadores</p></a>`; }).join("")}</div></div>`;
-}
-
-function vistaLiga(id, modo) {
-  const liga = LIGAS.find(l => l.id === id) || LIGAS[0];
-  const stats = modo === "stats";
-  const tabla = tablaLiga(liga.id);
-  if (!tabla.length) {
-    return `<div class="wrap fade" style="padding-top:40px"><div class="sec-title"><h2>${liga.nombre} · <em>Posiciones</em></h2></div>
-      <div class="tabs">${LIGAS.map(l => `<a class="tab ${l.id === liga.id ? "active" : ""}" href="#/liga/${l.id}">${l.nombre}</a>`).join("")}</div>
-      <div class="card"><p class="muted">Todavía no hay jugadores en esta liga. Cuando el organizador los asigne, van a aparecer acá.</p><div class="btns"><a class="btn primary" href="#/inscripcion">Quiero participar</a></div></div></div>`;
-  }
-  const pod = [tabla[1], tabla[0], tabla[2]];
-  const cls = ["p2", "p1", "p3"], nums = ["2º", "1º", "3º"];
-  const best = (fn, asc) => [...tabla].sort((a, b) => asc ? fn(a) - fn(b) : fn(b) - fn(a))[0];
-  const L = [
-    ["Mejor ataque", best(p => p.gf), p => p.gf + " goles"],
-    ["Mejor defensa", best(p => p.gc, true), p => p.gc + " en contra"],
-    ["Más posesión", best(p => p.posesion), p => p.posesion + "%"],
-    ["Mejor pase", best(p => p.precision), p => p.precision + "% de pases"],
-    ["Más tiros", best(p => p.tiros), p => p.tiros + " tiros"],
-  ].map(([t, p, f]) => `<a class="leader" href="#/jugador/${p.id}"><small>${t}</small><b>${f(p)}</b><span>${esc(p.nombre)}</span></a>`).join("");
-  const partidos = PARTIDOS.filter(m => m.liga === liga.id && esJugado(m));
-  const cabeza = stats
-    ? `<th>#</th><th class="l">Jugador</th><th>PJ</th><th>Tiros</th><th>Al arco</th><th>Pases</th><th>Pas %</th><th>Entradas</th><th>Faltas</th><th>Offs.</th><th>Córners</th><th>Amar.</th><th>Rojas</th><th>Atajadas</th>`
-    : `<th>#</th><th class="l">Jugador</th><th class="l">Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pos %</th><th>Pas %</th><th>Forma</th><th>Pts</th>`;
-  const filas = tabla.map((p, i) => { const t = teamById(p.equipoId);
-    const rc = `class="${!stats && i < 2 ? "top" : !stats && i === tabla.length - 1 ? "last" : ""}"`;
-    const nom = `<td class="l"><a href="#/jugador/${p.id}"><b>${p.nombre}</b></a></td>`;
-    return stats
-      ? `<tr><td><span class="pos">${i + 1}</span></td>${nom}<td>${p.pj}</td><td>${p.tiros}</td><td>${p.tirosArco}</td><td>${p.pases}</td><td>${p.precision}%</td><td>${p.entradas}</td><td>${p.faltas}</td><td>${p.offsides}</td><td>${p.corners}</td><td>${p.amarillas}</td><td>${p.rojas}</td><td>${p.atajadas}</td></tr>`
-      : `<tr ${rc}><td><span class="pos">${i + 1}</span></td>${nom}
-        <td class="l"><div class="team-cell">${crest(t)}<span>${t.nombre}<small>${stars(t.estrellas)}</small></span></div></td>
-        <td>${p.pj}</td><td>${p.g}</td><td>${p.e}</td><td>${p.p}</td><td>${p.gf}</td><td>${p.gc}</td><td>${p.dg > 0 ? "+" : ""}${p.dg}</td>
-        <td>${p.posesion}</td><td>${p.precision}</td>
-        <td><div class="form">${p.forma.map(f => `<i class="${f}">${f}</i>`).join("")}</div></td><td class="pts">${p.pts}</td></tr>`; }).join("");
-  return `<div class="wrap fade" style="padding-top:40px">
-    <div class="sec-title"><h2>${liga.nombre} · <em>${stats ? "Estadísticas" : "Posiciones"}</em></h2></div>
-    <div class="tabs">${LIGAS.map(l => `<a class="tab ${l.id === liga.id ? "active" : ""}" href="#/liga/${l.id}${stats ? "/stats" : ""}">${l.nombre}</a>`).join("")}</div>
-    ${stats ? "" : `<div class="podium">${pod.map((p, i) => { const t = teamById(p.equipoId); return `<a class="pod ${cls[i]}" href="#/jugador/${p.id}"><div class="m">${nums[i]}</div>${crest(t, "lg")}<b style="margin-top:8px">${p.nombre}</b><small>${t.nombre}</small><div class="pp">${p.pts} pts</div></a>`; }).join("")}</div>`}
-    <div class="leaders">${L}</div>
-    <div class="seg"><a class="${stats ? "" : "on"}" href="#/liga/${liga.id}">Posiciones</a><a class="${stats ? "on" : ""}" href="#/liga/${liga.id}/stats">Estadísticas</a></div>
-    <div class="table-wrap"><table><thead><tr>${cabeza}</tr></thead><tbody>${filas}</tbody></table></div>
-    <p class="muted" style="margin-top:10px;font-size:13px">${stats ? "Acumulado de la temporada, con los datos que muestra el juego al final de cada partido." : "Dorado: zona de ascenso · Rojo: zona de descenso."}${LIVE ? "" : " Datos de ejemplo."}</p>
-    ${partidos.length ? `<div class="sec-title" style="margin-top:36px"><h2>Últimos <em>partidos</em></h2></div><div class="sbs">${partidos.map(scorebug).join("")}</div>` : ""}
-  </div>`;
-}
 
 function vistaEquipos() {
   const grupos = [[5, "5 estrellas"], [4.5, "4.5 estrellas"], [4, "4 estrellas"], [3.5, "3.5 estrellas"], [3, "3 estrellas o menos"]];
   const lista = s => EQUIPOS.filter(t => s === 3 ? t.estrellas <= 3 : t.estrellas === s);
-  return `<div class="wrap fade" style="padding-top:40px"><div class="sec-title"><h2>Equipos <em>disponibles</em></h2><a href="#/inscripcion">Elegir mi equipo →</a></div>
+  return `<div class="wrap fade" style="padding-top:40px"><div class="sec-title"><h2>Equipos <em>disponibles</em></h2><a href="#/torneos">Ver torneos →</a></div>
+    <p class="muted" style="margin:-12px 0 6px">Los equipos se usan en los torneos de EA FC. Estos precios por estrellas aplican a la Premier League; en los demás torneos la inscripción es fija.</p>
     ${grupos.map(([s, nom]) => `<h3 class="sub" style="margin-top:26px"><span class="gold">${stars(s)}</span> ${nom} · ${$money(precioPorEstrellas(s))}</h3>
       <div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(190px,1fr))">${lista(s).map(t => `
       <div class="card hover" style="text-align:center">${crest(t, "lg")}<h3 style="margin-top:10px;font-size:20px">${t.nombre}</h3>
@@ -345,8 +135,8 @@ function vistaEquipos() {
 function vistaJugadores() {
   const lista = [...JUGADORES].sort((a, b) => b.pts - a.pts);
   return `<div class="wrap fade" style="padding-top:40px"><div class="sec-title"><h2><em>Jugadores</em></h2></div>
-  ${lista.length ? `<div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">${lista.map(p => { const t = teamById(p.equipoId);
-    return `<a class="card hover" href="#/jugador/${p.id}" style="display:flex;gap:12px;align-items:center">${crest(t)}<div><b>${esc(p.nombre)}</b><div class="muted" style="font-size:13px">${t.nombre} · ${p.liga ? "Liga " + p.liga : "Sin liga"}</div></div></a>`; }).join("")}</div>`
+  ${lista.length ? `<div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">${lista.map(p => { const t = equipoDe(p);
+    return `<a class="card hover" href="#/jugador/${p.id}" style="display:flex;gap:12px;align-items:center">${crest(t)}<div><b>${esc(p.nombre)}</b><div class="muted" style="font-size:13px">${t.nombre} · ${p.liga ? esc(nombreLiga(p.liga)) : "Sin torneo"}</div></div></a>`; }).join("")}</div>`
     : `<div class="card"><p class="muted">Todavía no hay jugadores aprobados. ¡Sé el primero!</p><div class="btns"><a class="btn primary" href="#/inscripcion">Quiero participar</a></div></div>`}</div>`;
 }
 
@@ -370,6 +160,7 @@ function radarSVG(vals) {
 
 // Totales, radar y promedios de un jugador (se usa en el perfil público y en el panel del jugador)
 function perfilStats(p) {
+  const J = juegoDeLiga(p.liga); if (J.stats !== "futbol") return perfilStatsGenerico(p, J);
   const pj = p.pj || 0, d = pj || 1;
   const clamp = v => Math.max(0, Math.min(100, Math.round(v)));
   const radar = [
@@ -408,11 +199,11 @@ function perfilPartidos(id) {
 function vistaJugador(id) {
   const p = jugadorById(id);
   if (!p) return `<div class="wrap" style="padding:80px 20px"><h2>Jugador no encontrado</h2><a class="btn" href="#/jugadores">Volver</a></div>`;
-  const t = teamById(p.equipoId);
+  const t = equipoDe(p);
   return `<div class="wrap fade">
     <div class="profile-head">${crest(t, "lg")}
-      <div><span class="pill">${p.liga ? "Liga " + p.liga : "Sin liga asignada"}</span><h1 style="margin-top:8px">${esc(p.nombre)}</h1>
-        <div class="badges"><span class="badge y">${t.nombre} ${stars(t.estrellas)}</span><span class="badge">${esc(p.plataforma)}</span><span class="badge">${p.ciudad}</span>${p.racha ? `<span class="badge g">${p.racha}</span>` : ""}<span class="badge">Desde ${p.desde}</span></div></div>
+      <div><span class="pill">${p.liga ? esc(nombreLiga(p.liga)) : "Sin torneo"}</span><h1 style="margin-top:8px">${esc(p.nombre)}</h1>
+        <div class="badges"><span class="badge y">${t.nombre} ${stars(t.estrellas)}</span><span class="badge">${juegoDeLiga(p.liga).nombre}</span><span class="badge">${esc(p.plataforma)}</span><span class="badge">${p.ciudad}</span>${p.racha ? `<span class="badge g">${p.racha}</span>` : ""}<span class="badge">Desde ${p.desde}</span></div></div>
       <div class="ovr"><b>${p.pts}</b><span>PUNTOS</span></div></div>
     ${perfilStats(p)}
     <h3 class="sub" style="margin-top:26px">Últimos partidos</h3>
@@ -423,21 +214,20 @@ function vistaJugador(id) {
 // ---------- FICHA DE PARTIDO (entretiempo y final) ----------
 function vistaPartido(id, modo) {
   const m = PARTIDOS.find(x => x.id === id);
-  if (!m) return `<div class="wrap" style="padding:80px 20px"><h2>Partido no encontrado</h2><a class="btn" href="#/liga/A">Volver</a></div>`;
-  const A = jugadorOr(m.a), B = jugadorOr(m.b), tA = teamById(A.equipoId), tB = teamById(B.equipoId);
+  if (!m) return `<div class="wrap" style="padding:80px 20px"><h2>Partido no encontrado</h2><a class="btn" href="#/torneos">Volver</a></div>`;
+  const A = jugadorOr(m.a), B = jugadorOr(m.b), tA = equipoDe(A), tB = equipoDe(B), J = juegoDeLiga(m.liga), NL = esc(nombreLiga(m.liga));
   const cabecera = (centro) => `<div class="mhead">
       <a class="tm" href="#/jugador/${A.id}">${crest(tA, "lg")}<b>${esc(A.nombre)}</b><small>${tA.nombre}</small></a>
       ${centro}
       <a class="tm" href="#/jugador/${B.id}">${crest(tB, "lg")}<b>${esc(B.nombre)}</b><small>${tB.nombre}</small></a></div>`;
   if (!esJugado(m)) {
-    return `<div class="wrap fade">${cabecera(`<div class="res"><div class="sc"><b>vs</b></div><small>Programado · Liga ${m.liga} · Fecha ${m.jornada}</small></div>`)}
+    return `<div class="wrap fade">${cabecera(`<div class="res"><div class="sc"><b>vs</b></div><small>Programado · ${NL} · Fecha ${m.jornada}</small></div>`)}
       <div class="card" style="max-width:820px;margin:0 auto;text-align:center"><p class="muted">Este partido todavía no se jugó.</p><p style="margin-top:6px"><b>${fechaCorta(m.fecha)}</b></p></div>
-      <div style="text-align:center;margin-top:14px"><a class="btn small" href="#/liga/${m.liga}">← Volver a la Liga ${m.liga}</a></div></div>`;
+      <div style="text-align:center;margin-top:14px"><a class="btn small" href="#/liga/${m.liga}">← Volver a ${NL}</a></div></div>`;
   }
-  const ht = modo === "ht" && !!m.ht, S = ht ? m.ht : m.ft;
-  // [campo, etiqueta, sufijo, "menos es mejor"]
-  const filas = [["pos", "Posesión", "%"], ["tiros", "Tiros"], ["tirosArco", "Tiros al arco"], ["pases", "Pases"], ["precision", "Precisión de pases", "%"],
-    ["entradas", "Entradas"], ["faltas", "Faltas", "", 1], ["offsides", "Offsides", "", 1], ["corners", "Córners"], ["amarillas", "Tarjetas amarillas", "", 1], ["rojas", "Tarjetas rojas", "", 1], ["atajadas", "Atajadas"]];
+  const ht = modo === "ht" && !!m.ht && J.ht, S = ht ? m.ht : m.ft;
+  // [campo, etiqueta, sufijo, "menos es mejor"] según el juego
+  const filas = statsDe(J).slice(1);
   const rows = filas.map(([k, et, suf = "", menos]) => {
     const a = S.a[k] || 0, b = S.b[k] || 0, tot = (a + b) || 1;
     const gana = a === b ? 0 : (menos ? (a < b ? 1 : 2) : (a > b ? 1 : 2));
@@ -446,11 +236,11 @@ function vistaPartido(id, modo) {
       <div class="v ${gana === 2 ? "w" : ""}">${b}${suf}</div></div>`; }).join("");
   const base = `#/partido/${m.id}`;
   return `<div class="wrap fade">
-    ${cabecera(`<div class="res"><div class="sc"><b>${S.a.goles}</b><i>-</i><b>${S.b.goles}</b></div><small>${ht ? "Entretiempo" : "Final"} · Liga ${m.liga} · Fecha ${m.jornada}</small></div>`)}
-    ${m.ht ? `<div style="text-align:center"><div class="seg"><a class="${ht ? "" : "on"}" href="${base}">Final</a><a class="${ht ? "on" : ""}" href="${base}/ht">Entretiempo</a></div></div>` : ""}
-    <div class="card" style="max-width:820px;margin:0 auto">${rows}</div>
+    ${cabecera(`<div class="res"><div class="sc"><b>${S.a.goles}</b><i>-</i><b>${S.b.goles}</b></div><small>${ht ? (J.stats === "nba" ? "Mitad" : "Entretiempo") : "Final"} · ${NL} · Fecha ${m.jornada}</small></div>`)}
+    ${m.ht && J.ht ? `<div style="text-align:center"><div class="seg"><a class="${ht ? "" : "on"}" href="${base}">Final</a><a class="${ht ? "on" : ""}" href="${base}/ht">Entretiempo</a></div></div>` : ""}
+    <div class="card" style="max-width:820px;margin:0 auto">${rows || `<p class="muted" style="text-align:center">En este juego se registra el marcador de cada partido.</p>`}</div>
     <p class="muted" style="text-align:center;margin-top:12px;font-size:13px">Estadísticas como las muestra el juego.${LIVE ? "" : " Partido de ejemplo con datos ficticios."}</p>
-    <div style="text-align:center;margin-top:14px"><a class="btn small" href="#/liga/${m.liga}">← Volver a la Liga ${m.liga}</a></div>
+    <div style="text-align:center;margin-top:14px"><a class="btn small" href="#/liga/${m.liga}">← Volver a ${NL}</a></div>
   </div>`;
 }
 
@@ -465,230 +255,14 @@ function availGridHTML(sel = []) {
     ${DIAS.map(d => `<div class="d">${d}</div>${TURNOS.map(tn => `<label><input type="checkbox" name="disp" value="${d}|${tn}" ${sel.includes(d + "|" + tn) ? "checked" : ""}><span class="c">${tn}</span></label>`).join("")}`).join("")}
   </div>`;
 }
-// Buscador + grilla de equipos + resumen con el precio
-function equipoPickerHTML() {
-  return `<label class="lb">Elegí tu equipo</label>
-      <div class="row2"><input id="buscar" placeholder="Buscar equipo..."><select id="filtro"><option value="0">Todas las estrellas</option><option value="5">5 estrellas</option><option value="4.5">4.5 estrellas</option><option value="4">4 estrellas</option><option value="3.5">3.5 estrellas</option><option value="3">3 estrellas o menos</option></select></div>
-      <div class="team-pick" id="picker" style="margin-top:10px"></div>
-      <div class="summary"><div><span class="muted">Equipo elegido</span><div id="sel-nombre" style="font-weight:700">Ninguno</div></div><div style="text-align:right"><span class="muted">Inscripción</span><br><b id="sel-precio">$0</b></div></div>`;
-}
-// Activa el selector de equipos. Devuelve { get(), reset() }
-function montarSelectorEquipos() {
-  let elegido = null;
-  const picker = document.getElementById("picker");
-  const pintar = () => {
-    const f = parseFloat(document.getElementById("filtro").value);
-    const b = document.getElementById("buscar").value.trim().toLowerCase();
-    const lista = EQUIPOS.filter(t => (!f || (f === 3 ? t.estrellas <= 3 : t.estrellas === f)) && (!b || t.nombre.toLowerCase().includes(b)));
-    picker.innerHTML = lista.length ? lista.map(t => { const ocup = EQUIPOS_OCUPADOS.has(t.id);
-      return `<div class="pick ${elegido === t.id ? "sel" : ""} ${ocup ? "taken" : ""}" data-id="${t.id}">${crest(t)}<b>${t.nombre}</b><small>${stars(t.estrellas)}</small><em>${ocup ? "Ya elegido" : $money(t.precio)}</em></div>`; }).join("")
-      : `<p class="muted">No hay equipos con ese filtro.</p>`;
-  };
-  picker.addEventListener("click", e => {
-    const el = e.target.closest(".pick"); if (!el || el.classList.contains("taken")) return;
-    elegido = Number(el.dataset.id); const t = teamById(elegido);
-    document.getElementById("sel-nombre").textContent = t.nombre + " " + stars(t.estrellas);
-    document.getElementById("sel-precio").textContent = $money(t.precio);
-    pintar();
-  });
-  document.getElementById("filtro").addEventListener("change", pintar);
-  document.getElementById("buscar").addEventListener("input", pintar);
-  pintar();
-  return {
-    get: () => elegido,
-    reset: () => { elegido = null; document.getElementById("sel-nombre").textContent = "Ninguno"; document.getElementById("sel-precio").textContent = "$0"; pintar(); },
-  };
-}
 
-function vistaInscripcion() {
-  if (LIVE) return vistaInscripcionLive();
-  return `<div class="wrap fade"><div class="formbox">
-    <h2>Inscribite a la <span class="grad">liga</span></h2>
-    <p class="muted" style="margin-top:8px">Completá tus datos, elegí tu equipo y decinos cuándo podés jugar.</p>
-    <form id="form">
-      <label class="lb">Nombre de jugador (el que va a verse en la tabla)</label>
-      <input name="nombre" required minlength="3" maxlength="24" placeholder="Ej: QuichaProPlayer">
-      <div class="row2">
-        <div><label class="lb">Tu ID en EA FC / PSN / Xbox / EA ID</label><input name="gamertag" required placeholder="Tu usuario en la consola"></div>
-        <div><label class="lb">WhatsApp (para coordinar partidos)</label><input name="whatsapp" required placeholder="Ej: 2262 123456"></div>
-      </div>
-      <label class="lb">Plataforma</label>
-      <select name="plataforma"><option>PlayStation 5</option><option>PlayStation 4</option><option>Xbox Series</option><option>PC</option></select>
 
-      <label class="lb">¿Qué día y horario te queda mejor? (marcá todos los que puedas)</label>
-      ${availGridHTML()}
 
-      ${equipoPickerHTML()}
-      <button class="btn primary" style="width:100%;margin-top:18px" type="submit">Anotarme</button>
-      <div id="resultado"></div>
-    </form></div></div>`;
-}
-
-function iniciarInscripcion() {
-  if (LIVE) return iniciarInscripcionLive();
-  const sel = montarSelectorEquipos();
-  document.getElementById("form").addEventListener("submit", e => {
-    e.preventDefault();
-    const out = document.getElementById("resultado");
-    const disp = [...e.target.querySelectorAll('input[name="disp"]:checked')].map(x => x.value);
-    if (!sel.get()) { out.innerHTML = `<div class="msg err">Elegí un equipo primero.</div>`; return; }
-    if (!disp.length) { out.innerHTML = `<div class="msg err">Marcá al menos un día y horario en que puedas jugar.</div>`; return; }
-    const d = Object.fromEntries(new FormData(e.target)); const t = teamById(sel.get());
-    addInscripto({ nombre: d.nombre, gamertag: d.gamertag, whatsapp: d.whatsapp, plataforma: d.plataforma, equipoId: sel.get(), disp, ts: Date.now(), estado: "pendiente" });
-    out.innerHTML = `<div class="msg">¡Listo, <b>${esc(d.nombre)}</b>! Quedaste anotado con <b>${t.nombre}</b>. Inscripción: <b>${$money(t.precio)}</b>. Elegiste ${disp.length} horarios. (Por ahora es una demostración: todavía no se guarda en la base de datos.)</div>`;
-    e.target.reset(); sel.reset();
-  });
-}
-
-// ---------- ADMIN ----------
-function adminResumen() {
-  const all = todasInscripciones().filter(x => x.estado !== "rechazada");
-  const n = all.length;
-  const conEq = all.map(x => ({ ...x, t: teamById(x.equipoId) }));
-  // Con datos reales, la recaudación cuenta solo lo que figura como pagado
-  const cobrados = LIVE ? conEq.filter(x => x.pagado) : conEq;
-  const total = cobrados.reduce((a, x) => a + x.t.precio, 0);
-  const porCobrar = LIVE ? conEq.filter(x => !x.pagado).reduce((a, x) => a + x.t.precio, 0) : 0;
-  const cubre = Math.round(total / PREMIO * 100);
-  const prom = cobrados.length ? total / cobrados.length : 0;
-
-  // categorías de precio
-  const cats = [[10000, "Hasta 3★"], [20000, "3.5 a 4★"], [50000, "4.5★"], [100000, "5★"]].map(([pr, nom]) => {
-    const c = conEq.filter(x => x.t.precio === pr).length; return { nom, c, plata: c * pr };
-  });
-  const maxCat = Math.max(1, ...cats.map(c => c.c));
-
-  // plataformas
-  const plats = {}; all.forEach(x => plats[x.plataforma] = (plats[x.plataforma] || 0) + 1);
-  const platList = Object.entries(plats).sort((a, b) => b[1] - a[1]);
-  const colores = ["#ffc531", "#3ee6ff", "#8b7bff", "#35e08a", "#ff4d5e"];
-  let acc = 0;
-  const conic = platList.map(([, c], i) => { const a = acc / n * 100; acc += c; return `${colores[i % 5]} ${a}% ${acc / n * 100}%`; }).join(",");
-
-  // equipos más elegidos
-  const porEq = {}; conEq.forEach(x => porEq[x.t.nombre] = (porEq[x.t.nombre] || 0) + 1);
-  const topEq = Object.entries(porEq).sort((a, b) => b[1] - a[1]).slice(0, 5);
-
-  // mapa de calor de disponibilidad
-  const cnt = {}; let maxH = 1;
-  all.forEach(x => x.disp.forEach(k => { cnt[k] = (cnt[k] || 0) + 1; maxH = Math.max(maxH, cnt[k]); }));
-  const slots = [];
-  DIAS.forEach(d => TURNOS.forEach(tn => slots.push({ d, tn, c: cnt[d + "|" + tn] || 0 })));
-  const mejores = [...slots].sort((a, b) => b.c - a.c).slice(0, 3);
-  const heat = `<div class="hh"></div>${TURNOS.map(tn => `<div class="hh">${ICONO_TURNO[tn]} ${tn}</div>`).join("")}` +
-    DIAS.map(d => `<div class="hd">${d}</div>` + TURNOS.map(tn => {
-      const c = cnt[d + "|" + tn] || 0, a = c / maxH, best = mejores[0].d === d && mejores[0].tn === tn;
-      return `<div class="${best ? "best" : ""}" style="background:rgba(255,197,49,${(0.05 + a * 0.8).toFixed(2)});color:${a > 0.55 ? "#04101f" : "var(--txt)"}">${c}</div>`; }).join("")).join("");
-  const turnoTot = TURNOS.map(tn => ({ tn, c: slots.filter(s => s.tn === tn).reduce((a, s) => a + s.c, 0) }));
-  const maxTurno = Math.max(1, ...turnoTot.map(x => x.c));
-  const diaTot = DIAS.map(d => ({ d, c: slots.filter(s => s.d === d).reduce((a, s) => a + s.c, 0) }));
-  const maxDia = Math.max(1, ...diaTot.map(x => x.c));
-
-  // inscripciones por día (últimos 7)
-  const dias7 = [];
-  for (let i = 6; i >= 0; i--) {
-    const ini = new Date(); ini.setHours(0, 0, 0, 0); ini.setDate(ini.getDate() - i);
-    const fin = ini.getTime() + 86400000;
-    dias7.push({ l: ini.toLocaleDateString("es-AR", { weekday: "short", day: "numeric" }), c: all.filter(x => x.ts >= ini.getTime() && x.ts < fin).length });
-  }
-  const max7 = Math.max(1, ...dias7.map(d => d.c));
-
-  const reales = all.filter(x => !x.demo).length;
-
-  return `<div>
-    <div class="kpis">
-      <div class="kpi"><b style="color:var(--win)">${n}</b><span>${LIVE ? "Inscriptos" : `Inscriptos (${reales} reales + ${n - reales} de ejemplo)`}</span></div>
-      ${LIVE ? `<div class="kpi"><b>${all.filter(x => x.estado === "pendiente").length}</b><span>Pendientes de aprobar</span></div>` : ""}
-      <div class="kpi"><b class="gold">${$money(total)}</b><span>${LIVE ? "Cobrado (marcado como pagado)" : "Recaudación total"}</span></div>
-      ${LIVE ? `<div class="kpi"><b>${$money(porCobrar)}</b><span>Por cobrar</span></div>` : ""}
-      <div class="kpi"><b>${cubre}%</b><span>del premio cubierto (${$money(PREMIO)})</span></div>
-      <div class="kpi"><b>${$money(prom)}</b><span>Ticket promedio (cobrado)</span></div>
-      <div class="kpi"><b>${Math.max(0, META_INSCRIPTOS - n)}</b><span>Cupos libres de ${META_INSCRIPTOS}</span></div>
-    </div>
-    <div class="progress" style="margin-top:14px"><i style="width:${Math.min(100, cubre)}%"></i></div>
-    <p class="muted" style="font-size:13px;margin-top:6px">${cubre >= 100 ? "La recaudación ya cubre el premio." : "Faltan " + $money(Math.max(0, PREMIO - total)) + " para cubrir el premio con las inscripciones."}</p>
-
-    <div class="adm-grid">
-      <div class="card"><h3 class="sub">Mejores horarios para jugar</h3>
-        <div class="heat">${heat}</div>
-        <p class="muted" style="font-size:12px;margin-top:8px">Cada celda es la cantidad de jugadores que puede ese día y turno. Borde dorado: el mejor.</p>
-        <div class="top3">${mejores.map((m, i) => `<div><b>#${i + 1} ${m.d}</b><span class="muted">${m.tn} · ${m.c} jugadores</span></div>`).join("")}</div>
-      </div>
-      <div class="card"><h3 class="sub">Disponibilidad por turno y por día</h3>
-        ${turnoTot.map(x => `<div class="hbar"><span>${ICONO_TURNO[x.tn]} ${x.tn}</span><div class="track"><i style="width:${x.c / maxTurno * 100}%"></i></div><b>${x.c}</b></div>`).join("")}
-        <div style="height:10px"></div>
-        ${diaTot.map(x => `<div class="hbar"><span>${x.d}</span><div class="track"><i style="width:${x.c / maxDia * 100}%"></i></div><b>${x.c}</b></div>`).join("")}
-      </div>
-      <div class="card"><h3 class="sub">Inscriptos por categoría</h3>
-        ${cats.map(c => `<div class="hbar"><span>${c.nom}</span><div class="track"><i style="width:${c.c / maxCat * 100}%"></i></div><b>${c.c} · ${$money(c.plata)}</b></div>`).join("")}
-      </div>
-      <div class="card"><h3 class="sub">Equipos más elegidos</h3>
-        ${topEq.map(([nom, c]) => { const t = teamByName(nom); return `<div class="hbar"><span class="team-cell">${crest(t)}</span><div><b style="font-size:14px">${nom}</b><div class="track" style="margin-top:4px"><i style="width:${c / topEq[0][1] * 100}%"></i></div></div><b>${c}</b></div>`; }).join("") || "<p class='muted'>Sin datos</p>"}
-      </div>
-      <div class="card"><h3 class="sub">Plataformas</h3>
-        <div class="donut"><div class="ring2" style="background:conic-gradient(${conic || "#1f2e4c 0 100%"})"></div>
-        <div>${platList.map(([nom, c], i) => `<div class="lg-item"><i style="background:${colores[i % 5]}"></i>${nom}: <b>${c}</b> (${Math.round(c / n * 100)}%)</div>`).join("")}</div></div>
-      </div>
-      <div class="card"><h3 class="sub">Inscripciones por día</h3>
-        <div style="display:flex;align-items:flex-end;gap:8px;height:150px">${dias7.map(d => `<div style="flex:1;text-align:center"><div style="height:${Math.max(4, d.c / max7 * 110)}px;background:linear-gradient(180deg,var(--accent),var(--sea));border-radius:3px 3px 0 0"></div><b style="font-size:13px">${d.c}</b><div class="muted" style="font-size:10px">${d.l}</div></div>`).join("")}</div>
-      </div>
-    </div>
-
-    <h3 class="sub" style="margin-top:28px">Todos los inscriptos</h3>
-    <div class="table-wrap"><table><thead><tr><th>#</th><th class="l">Jugador</th><th class="l">Equipo</th><th>Estrellas</th><th>Inscripción</th><th>Plataforma</th><th>WhatsApp</th><th class="l">Horarios</th></tr></thead><tbody>
-      ${conEq.map((x, i) => `<tr><td>${i + 1}</td><td class="l"><b>${esc(x.nombre)}</b>${x.demo ? ' <span class="badge">ejemplo</span>' : ""}${LIVE ? ` <span class="badge ${x.estado === 'aprobada' ? 'g' : 'y'}">${x.estado}</span>` : ""}</td><td class="l"><div class="team-cell">${crest(x.t)}${x.t.nombre}</div></td><td class="gold">${stars(x.t.estrellas)}</td><td class="pts">${$money(x.t.precio)}</td><td>${esc(x.plataforma)}</td><td>${esc(x.whatsapp) || "—"}</td><td class="l muted" style="white-space:normal;min-width:220px;font-size:12px">${resumenDisp(x.disp)}</td></tr>`).join("")}
-    </tbody></table></div>
-    ${LIVE ? "" : `<div class="warn">Los datos de este panel son de ejemplo. Cuando conectes Supabase se van a ver los inscriptos reales.</div>`}
-  </div>`;
-}
 function resumenDisp(disp) {
   return DIAS.map(d => { const ts = TURNOS.filter(tn => disp.includes(d + "|" + tn)); return ts.length ? `<b>${d.slice(0, 3)}</b> ${ts.map(t => t[0]).join("/")}` : ""; }).filter(Boolean).join(" · ");
 }
-function iniciarAdmin() {
-  const b = document.getElementById("csv"); if (!b) return;
-  b.addEventListener("click", () => {
-    const filas = [["Nombre", "ID consola", "WhatsApp", "Plataforma", "Equipo", "Estrellas", "Precio", "Horarios"]];
-    todasInscripciones().forEach(x => { const t = teamById(x.equipoId); filas.push([x.nombre, x.gamertag || "", x.whatsapp || "", x.plataforma, t.nombre, t.estrellas, t.precio, x.disp.join(" ")]); });
-    const csv = "﻿" + filas.map(f => f.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(",")).join("\n");
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    a.download = "inscriptos-liga.csv"; a.click();
-  });
-}
 
-// ============================================================
-//  EFECTOS: carrusel, cuenta regresiva, contadores, reveal
-// ============================================================
-function iniciarCarrusel() {
-  const root = document.getElementById("carousel"); if (!root) return;
-  const slides = [...root.querySelectorAll(".slide")], dots = [...root.querySelectorAll(".dot")], prog = root.querySelector(".cprog i");
-  let i = 0, timer = null;
-  const reiniciarBarra = () => { prog.style.animation = "none"; void prog.offsetWidth; prog.style.animation = ""; };
-  const ir = n => {
-    i = (n + slides.length) % slides.length;
-    slides.forEach((s, k) => s.classList.toggle("active", k === i));
-    dots.forEach((d, k) => d.classList.toggle("on", k === i));
-    countUp(slides[i]); reiniciarBarra();
-  };
-  const arrancar = () => { clearInterval(timer); timer = setInterval(() => ir(i + 1), 7000); TIMERS.push(timer); reiniciarBarra(); prog.style.animationPlayState = "running"; };
-  const pausar = () => { clearInterval(timer); prog.style.animationPlayState = "paused"; };
-  dots.forEach((d, k) => d.addEventListener("click", () => { ir(k); arrancar(); }));
-  document.getElementById("prev").addEventListener("click", () => { ir(i - 1); arrancar(); });
-  document.getElementById("next").addEventListener("click", () => { ir(i + 1); arrancar(); });
-  root.addEventListener("mouseenter", pausar); root.addEventListener("mouseleave", arrancar);
-  arrancar();
-}
 
-function iniciarCuentaRegresiva() {
-  const el = document.getElementById("cd"); if (!el) return;
-  const pintar = () => {
-    let ms = new Date(INICIO).getTime() - Date.now();
-    if (ms <= 0) { el.innerHTML = `<div style="min-width:160px"><b>¡YA ARRANCÓ!</b></div>`; return; }
-    const d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4), s = Math.floor(ms % 6e4 / 1e3);
-    el.innerHTML = [[d, "Días"], [h, "Horas"], [m, "Min"], [s, "Seg"]].map(([v, l]) => `<div><b>${String(v).padStart(2, "0")}</b><span>${l}</span></div>`).join("");
-  };
-  pintar(); TIMERS.push(setInterval(pintar, 1000));
-}
 
 function countUp(root) {
   root.querySelectorAll("[data-count]").forEach(el => {
@@ -712,7 +286,6 @@ function iniciarReveal() {
 // ============================================================
 //  ROUTER
 // ============================================================
-const RUTAS_CON_CARRUSEL = ["", undefined];
 function render() {
   clearTimers();
   const hash = location.hash.replace(/^#\/?/, "");
@@ -720,22 +293,23 @@ function render() {
   let html = "", init = null, esInicio = false;
   switch (ruta) {
     case "": html = vistaInicio(); esInicio = true; break;
-    case "ligas": html = vistaLigas(); break;
-    case "liga": html = vistaLiga((param || "A").toUpperCase(), param2); break;
+    case "ligas": case "torneos": html = vistaTorneos(); init = iniciarFiltroTorneos; break;
+    case "torneo": html = vistaTorneo(param); break;
+    case "liga": html = vistaLiga(param, param2); break;
     case "equipos": html = vistaEquipos(); break;
     case "jugadores": html = vistaJugadores(); break;
     case "jugador": html = vistaJugador(param); break;
     case "partido": html = vistaPartido(param, param2); break;
-    case "inscripcion": html = vistaInscripcion(); init = iniciarInscripcion; break;
+    case "inscripcion": html = vistaInscripcion(param); init = () => iniciarInscripcion(param); break;
     case "ingresar": case "registro": case "login": html = vistaAuth(ruta === "registro" ? "registro" : "ingresar"); init = iniciarAuth; break;
-    case "panel": html = vistaPanel(); init = iniciarPanel; break;
+    case "panel": html = vistaPanel(param); init = iniciarPanel; break;
     case "admin": html = vistaAdminShell(param, param2, param3); init = iniciarAdminShell; break;
     default: html = vistaInicio(); esInicio = true;
   }
   app.innerHTML = (typeof bannerErrorDatos === "function" ? bannerErrorDatos() : "") + html;
   if (init) init();
-  if (esInicio) { iniciarCarrusel(); iniciarCuentaRegresiva(); countUp(app.querySelector(".slide.active")); }
-  const activa = ruta === "liga" || ruta === "partido" ? "ligas" : ruta === "jugador" ? "jugadores" : (ruta === "registro" || ruta === "login") ? "ingresar" : ruta;
+  if (esInicio) { iniciarCarrusel(); iniciarFiltroTorneos(); }
+  const activa = ["liga", "partido", "torneo", "ligas"].includes(ruta) ? "torneos" : ruta === "jugador" ? "jugadores" : (ruta === "registro" || ruta === "login") ? "ingresar" : ruta;
   if (typeof renderMenu === "function") renderMenu(activa);
   if (!KEEP_SCROLL) window.scrollTo(0, 0);
   KEEP_SCROLL = false;

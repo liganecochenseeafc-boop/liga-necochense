@@ -1,5 +1,5 @@
 /* ============================================================
-   LIGA NECOCHENSE · identidad "Faro"
+   LDV NECOCHENSE (LIGA DE VIRGOS) · identidad "Faro"
    Azul océano + ámbar de faro + celeste de mar. Estilo transmisión deportiva.
    ============================================================ */
 :root{
@@ -414,3 +414,138 @@ tr.me td{background:rgba(255,197,49,.12);box-shadow:inset 3px 0 0 var(--accent)}
 .rtable td,.rtable th{padding:6px 8px;text-align:center}
 .acc-col{flex-direction:column;align-items:stretch;min-width:112px}
 .acc-col .btn,.plact .btn{padding:8px 12px;font-size:12px;white-space:nowrap}
+
+/* ===== LDV: marca ===== */
+.brand-badge{font-size:19px;letter-spacing:0;width:50px}
+
+/* ===== LDV: carrusel chico (se mueve solo y a mano) ===== */
+.hero2{position:relative;background:linear-gradient(120deg,#051a3b,#030815 60%);border-bottom:1px solid var(--line);overflow:hidden}
+.hero2 .htrack{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;cursor:grab}
+.hero2 .htrack.drag{cursor:grabbing;scroll-snap-type:none;scroll-behavior:auto}
+.hero2 .htrack::-webkit-scrollbar{display:none}
+.hs{flex:0 0 100%;scroll-snap-align:start;min-height:300px;padding:30px 0 46px;display:flex;align-items:center;position:relative}
+.hs::before{content:"";position:absolute;inset:0;z-index:0}
+.hs1::before{background:radial-gradient(600px 320px at 85% 40%,rgba(255,197,49,.2),transparent 70%)}
+.hs2::before{background:radial-gradient(600px 320px at 85% 40%,rgba(62,230,255,.2),transparent 70%)}
+.hs3::before{background:radial-gradient(600px 320px at 85% 40%,rgba(53,224,138,.18),transparent 70%)}
+.hs4::before{background:radial-gradient(600px 320px at 85% 40%,rgba(139,123,255,.22),transparent 70%)}
+.hs>.wrap{width:100%;position:relative;z-index:1}
+.hgrid{display:grid;grid-template-columns:1.2fr .8fr;gap:24px;align-items:center}
+.hs h1{font-size:clamp(34px,5.2vw,62px);line-height:.95;margin:12px 0 8px;font-style:italic}
+.hs h1 em{color:var(--accent);font-style:italic}
+.hs .lead{font-size:16px;color:#b9c8e8;max-width:560px}
+.hbig{font:800 clamp(40px,6vw,70px) 'Barlow Condensed';line-height:1;color:var(--accent);font-style:italic;text-shadow:0 0 40px rgba(255,197,49,.35)}
+.hart{display:grid;place-items:center;position:relative;min-height:170px}
+.htrophy{width:min(190px,60%);filter:drop-shadow(0 12px 30px rgba(255,197,49,.35));position:relative;z-index:1;animation:flota 4s ease-in-out infinite}
+.hring{position:absolute;width:210px;height:210px;border-radius:50%;border:2px dashed rgba(255,197,49,.3);animation:gira 30s linear infinite}
+@keyframes flota{50%{transform:translateY(-8px)}}
+@keyframes gira{to{transform:rotate(360deg)}}
+.gbadges{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.gbadge{border:1px solid color-mix(in srgb,var(--c) 55%,transparent);background:color-mix(in srgb,var(--c) 12%,#07122a);color:var(--txt);padding:10px 8px;text-align:center;cursor:pointer;transition:.2s;font:inherit;display:grid;gap:2px;justify-items:center}
+.gbadge:hover{transform:translateY(-3px);background:color-mix(in srgb,var(--c) 26%,#07122a)}
+.gbadge b{font:800 15px 'Barlow Condensed';letter-spacing:1px;text-transform:uppercase}
+.gbadge small{color:var(--muted);font-size:11px}
+.hsteps{display:grid;gap:8px}
+.hsteps div{display:flex;gap:12px;align-items:center;padding:10px 14px;background:rgba(255,255,255,.05);border-left:3px solid var(--win)}
+.hsteps b{font:800 28px 'Barlow Condensed';color:var(--win);line-height:1}
+.hsteps span{font-weight:600;font-size:14px}
+.hstats{display:grid;gap:10px}
+.hstats div{padding:12px 16px;background:rgba(255,255,255,.05);border-left:3px solid var(--violet)}
+.hstats b{display:block;font:800 40px 'Barlow Condensed';line-height:1}
+.hstats span{color:var(--muted);font-size:13px}
+.harrow{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:40px;height:40px;background:rgba(3,8,21,.7);border:1px solid var(--line);color:var(--txt);font-size:22px;cursor:pointer;transition:.2s}
+.harrow:hover{background:var(--accent);color:#1a1200}
+.harrow.l{left:10px}.harrow.r{right:10px}
+.hdots{position:absolute;left:0;right:0;bottom:12px;display:flex;gap:8px;justify-content:center;z-index:5}
+.hdot{width:26px;height:6px;border:0;background:rgba(255,255,255,.22);cursor:pointer;padding:0;transition:.25s}
+.hdot.on{background:var(--accent);width:44px}
+.hero2 .cprog i{animation-duration:6.5s}
+
+/* ===== LDV: filtro por juego y tarjetas de torneos ===== */
+.fj{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.fchip{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;background:var(--card);border:1px solid var(--line);color:var(--muted);font:800 15px 'Barlow Condensed';letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:.2s}
+.fchip i{font-style:normal;background:rgba(255,255,255,.1);padding:1px 8px;border-radius:10px;font-size:12px}
+.fchip .fdot{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.fchip:hover{color:var(--txt);border-color:var(--c,var(--accent))}
+.fchip.on{background:var(--c,var(--accent));border-color:transparent;color:#0a0f1a}
+.fchip.on i{background:rgba(0,0,0,.2)}
+.fchip.on .fdot{background:#0a0f1a}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
+.tcard{display:flex;flex-direction:column;background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);border-top:3px solid var(--c);transition:.25s;overflow:hidden}
+.tcard:hover{transform:translateY(-4px);box-shadow:0 18px 44px color-mix(in srgb,var(--c) 18%,transparent)}
+.tcard.big{grid-column:1/-1;flex-direction:row}
+.tcard.big .tart{flex:0 0 46%;min-height:340px}
+.tcard.big .tt h3{font-size:clamp(40px,5vw,64px)}
+.tcard.big .tbody{flex:1;justify-content:center}
+.tart{position:relative;display:block;min-height:170px;overflow:hidden;background:#07122a}
+.tart-svg{position:absolute;inset:0;width:100%;height:100%;transition:transform .6s}
+.tcard:hover .tart-svg{transform:scale(1.06)}
+.tart::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(3,8,21,.92) 0%,rgba(3,8,21,.1) 62%)}
+.tart .tj,.tart .tdep{position:absolute;top:12px;z-index:2;font:800 13px 'Barlow Condensed';letter-spacing:2px;text-transform:uppercase;padding:4px 10px}
+.tart .tj{left:12px;background:var(--c);color:#0a0f1a}
+.tart .tdep{right:12px;background:rgba(3,8,21,.7);color:var(--txt)}
+.tart .tt{position:absolute;left:16px;right:16px;bottom:14px;z-index:2}
+.tart .tt h3{font-size:32px;font-style:italic;line-height:1;text-shadow:0 2px 14px rgba(0,0,0,.7)}
+.tart .tt small{color:#cfe0ff;font-size:13px}
+.tbody{padding:16px 18px 18px;display:flex;flex-direction:column;gap:12px;flex:1}
+.tdet{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 14px}
+.tdet li{display:flex;flex-direction:column;border-bottom:1px solid var(--line);padding-bottom:5px}
+.tdet li span{font:700 12px 'Barlow Condensed';letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.tdet li b{font-size:15px}
+.tdet.prem li b{font:800 24px 'Barlow Condensed';color:var(--accent);line-height:1.1}
+.tdet.prem li:first-child b{color:var(--c)}
+.tc-top{display:flex;justify-content:space-between;gap:10px;font-size:14px;align-items:baseline}
+.tc-top em{font-style:normal;color:var(--muted);font-size:13px}
+.tcupo .progress i{background:var(--c,var(--accent))}
+.tnote{font-size:12px;color:var(--muted);margin-top:6px}
+.tbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
+.tbtns .btn{flex:1;text-align:center;padding-left:14px;padding-right:14px}
+.btn.off{opacity:.55;cursor:default;pointer-events:none}
+@media(max-width:860px){.tcard.big{flex-direction:column}.tcard.big .tart{flex:none;min-height:220px}.hgrid{grid-template-columns:1fr}.hart{display:none}.gbadges{grid-template-columns:repeat(3,1fr)}.hs{padding-bottom:54px}.harrow{display:none}}
+
+/* sorteo justo (inicio) */
+.fair{display:grid;grid-template-columns:1.2fr 1fr;gap:26px;align-items:center;padding:30px;background:linear-gradient(120deg,#082a22,#06102a);border:1px solid rgba(53,224,138,.3)}
+.fair h2{font-size:42px;font-style:italic;line-height:1;margin:10px 0}
+.fair-steps{list-style:none;display:grid;gap:10px;counter-reset:fs}
+.fair-steps li{counter-increment:fs;padding:12px 14px 12px 58px;background:rgba(255,255,255,.05);position:relative}
+.fair-steps li::before{content:counter(fs);position:absolute;left:14px;top:8px;font:800 34px 'Barlow Condensed';color:var(--win)}
+.fair-steps b{display:block}.fair-steps span{color:var(--muted);font-size:13px}
+@media(max-width:860px){.fair{grid-template-columns:1fr;padding:20px}.fair h2{font-size:32px}}
+
+/* detalle de torneo */
+.thero{display:grid;grid-template-columns:1.1fr 1fr;grid-template-areas:"art panel" "head panel";gap:16px 24px;margin-top:30px}
+.thero .big-art{grid-area:art;min-height:230px;border-top:3px solid var(--c)}
+.thero .thead{grid-area:head}
+.thero .tpanel{grid-area:panel;align-self:start;border-top:3px solid var(--c)}
+.thead h1{font-size:clamp(36px,5vw,60px);font-style:italic;line-height:.95;margin:10px 0}
+.tprizes{display:grid;gap:8px}
+.tprizes div{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line)}
+.tprizes span{font:700 14px 'Barlow Condensed';letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.tprizes b{font:800 28px 'Barlow Condensed';color:var(--accent)}
+.tprizes .main b{font-size:44px;color:var(--c)}
+.reglas{list-style:none;display:grid;gap:10px;font-size:14px}
+.reglas li{padding-left:14px;border-left:3px solid var(--line)}
+.chips-list{display:flex;flex-wrap:wrap;gap:8px}
+.plchip{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;background:var(--bg2);border:1px solid var(--line);font-size:13px;font-weight:600}
+.plchip .crest{width:26px;height:26px;font-size:10px}
+@media(max-width:860px){.thero{grid-template-columns:1fr;grid-template-areas:"art" "head" "panel"}}
+
+/* inscripción */
+.insc-top{display:flex;gap:16px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.insc-top h2{font-size:clamp(30px,5vw,46px)}
+.tart.mini{width:130px;min-height:92px;flex:none;border:1px solid var(--c)}
+.tart.mini::after{background:none}
+.fairbox{padding:12px 14px;background:rgba(53,224,138,.08);border-left:4px solid var(--win);font-size:14px;margin:6px 0 10px}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.slot{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg2);border:1px dashed var(--line);min-height:50px;font-size:13px;position:relative}
+.slot.full{border-style:solid;border-color:var(--accent);background:rgba(255,197,49,.07)}
+.slot .sn{font:800 18px 'Barlow Condensed';color:var(--accent)}
+.slot .crest{width:28px;height:28px;font-size:10px;flex:none}
+.slot b{font-size:13px;line-height:1.1}
+.slot em{color:var(--muted);font-style:normal;font-size:12px}
+.slx{margin-left:auto;background:transparent;border:0;color:var(--red);font-size:20px;cursor:pointer;line-height:1}
+.pick{position:relative}
+.pick .pn{position:absolute;top:6px;right:8px;background:var(--accent);color:#1a1200;font:800 15px 'Barlow Condensed';width:22px;height:22px;display:grid;place-items:center;border-radius:50%}
+@media(max-width:600px){.slots{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
+.team-pick>p{grid-column:1/-1}
+.insc-top>div:last-child{flex:1;min-width:240px}

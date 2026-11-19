@@ -1,10 +1,9 @@
 // ============================================================
-//  DATOS DE LA LIGA (versión 1 con datos de ejemplo)
+//  DATOS DE LDV NECOCHENSE (LIGA DE VIRGOS) · datos de ejemplo
 //  Más adelante estos datos van a venir de Supabase.
 //  Las estrellas son aproximadas: podés corregirlas acá.
 // ============================================================
 
-const PREMIO = 1000000;
 
 // Precio de inscripción según estrellas del equipo
 function precioPorEstrellas(estrellas) {
@@ -64,13 +63,73 @@ const EQUIPOS = EQUIPOS_RAW.map(([nombre, estrellas, c1, c2], i) => ({
 }));
 
 
-const LIGAS = [
-  { id: "A", nombre: "Liga A", desc: "La élite. Los mejores jugadores de Necochea.", color: "#ffc531" },
-  { id: "B", nombre: "Liga B", desc: "Alto nivel y mucha pelea por el ascenso.", color: "#3ee6ff" },
-  { id: "C", nombre: "Liga C", desc: "Intermedia, pareja y muy picante.", color: "#8b7bff" },
-  { id: "D", nombre: "Liga D", desc: "Para los que vienen creciendo.", color: "#ff8a3d" },
-  { id: "E", nombre: "Liga E", desc: "Puerta de entrada a la competencia.", color: "#ff4d5e" },
+// ============================================================
+//  JUEGOS Y TORNEOS  (editá esto para cambiar premios, cupos, precios...)
+//  Cada torneo es una "liga" donde la gente se anota.
+// ============================================================
+const JUEGOS = {
+  eafc27:  { id: "eafc27",  nombre: "EA FC 27",        deporte: "Fútbol",         color: "#2bd97c", stats: "futbol", marcador: "Goles",  ht: true,  pv: 3, pe: 1, empates: true },
+  pes6:    { id: "pes6",    nombre: "PES 6",           deporte: "Fútbol retro",   color: "#3d8bff", stats: "futbol", marcador: "Goles",  ht: true,  pv: 3, pe: 1, empates: true },
+  nba2k27: { id: "nba2k27", nombre: "NBA 2K27",        deporte: "Básquet",        color: "#ff8a3d", stats: "nba",    marcador: "Puntos", ht: true,  pv: 2, pe: 0, empates: false },
+  mk1:     { id: "mk1",     nombre: "Mortal Kombat 1", deporte: "Lucha",          color: "#ff3b4e", stats: "mk",     marcador: "Rondas", ht: false, pv: 3, pe: 0, empates: false },
+  mk3:     { id: "mk3",     nombre: "Mortal Kombat 3", deporte: "Lucha retro",    color: "#ffd23d", stats: "mk",     marcador: "Rondas", ht: false, pv: 3, pe: 0, empates: false },
+  f1:      { id: "f1",      nombre: "F1 2027",         deporte: "Automovilismo",  color: "#ff5a4d", stats: "f1",     marcador: "Puntos", ht: false, pv: 3, pe: 0, empates: false },
+};
+// Estadísticas que se cargan en cada tipo de juego: [campo, etiqueta, sufijo, "menos es mejor"]
+// El primero de la lista siempre es el marcador.
+const STATS_JUEGO = {
+  futbol: [["goles", "Goles"], ["pos", "Posesión", "%"], ["tiros", "Tiros"], ["tirosArco", "Tiros al arco"], ["pases", "Pases"], ["precision", "Precisión de pases", "%"],
+    ["entradas", "Entradas"], ["faltas", "Faltas", "", 1], ["offsides", "Offsides", "", 1], ["corners", "Córners"], ["amarillas", "Tarjetas amarillas", "", 1], ["rojas", "Tarjetas rojas", "", 1], ["atajadas", "Atajadas"]],
+  nba: [["goles", "Puntos"], ["reb", "Rebotes"], ["ast", "Asistencias"], ["rob", "Robos"], ["tap", "Tapones"], ["tri", "Triples"], ["per", "Pérdidas", "", 1], ["fal", "Faltas", "", 1]],
+  mk: [["goles", "Rondas ganadas"]],
+  f1: [["goles", "Puntos"]],
+};
+
+// inscripcion: { tipo: "fija", monto } o { tipo: "estrellas" } (el precio depende de las estrellas del equipo)
+// equipos: "sorteo" = el jugador elige hasta 3 equipos y se asignan por sorteo cuando se completa el cupo
+//          "ninguno" = no hay equipo fijo (se elige en cada partido)
+// demo: cuántos anotados muestra la versión de ejemplo (sin Supabase)
+const TORNEOS = [
+  { id: "trimestral", nombre: "Liga Trimestral", juego: "eafc27", formato: "Liga · todos contra todos", cupo: 30, unidad: "equipos", duracion: "3 meses",
+    inscripcion: { tipo: "fija", monto: 100000 }, porFecha: { monto: 5000, txt: "por fecha" }, premios: [["Campeón", 1500000], ["Subcampeón", 500000]],
+    equipos: "sorteo", destacado: true, demo: 23, desc: "La liga grande de la ciudad: 3 meses de competencia y el premio más alto." },
+  { id: "finde", nombre: "Liga de Fin de Semana", juego: "eafc27", formato: "Liga · todos contra todos", cupo: 20, unidad: "equipos", duracion: "2 días",
+    inscripcion: { tipo: "fija", monto: 50000 }, porFecha: { monto: 5000, txt: "por partido" }, premios: [["Campeón", 500000], ["Subcampeón", 250000]],
+    equipos: "sorteo", demo: 14, desc: "Todo se define en un fin de semana. Rápida, intensa y con premio." },
+  { id: "premier", nombre: "Premier League", juego: "eafc27", formato: "Liga · todos contra todos", cupo: 20, unidad: "equipos", duracion: "2 meses",
+    inscripcion: { tipo: "estrellas" }, porFecha: null, premios: [["Campeón", 500000]],
+    equipos: "sorteo", demo: 17, desc: "Cuanto mejor el equipo, más cuesta anotarse: de $10.000 (3★) a $100.000 (5★)." },
+  { id: "copa", nombre: "Copa Necochea", juego: "eafc27", formato: "Eliminación directa", cupo: 32, unidad: "equipos", duracion: "1 mes",
+    inscripcion: { tipo: "fija", monto: 30000 }, porFecha: null, premios: [["Campeón", 600000], ["Subcampeón", 200000]],
+    equipos: "sorteo", demo: 21, desc: "Perdés y te vas. Cruces directos hasta la gran final." },
+  { id: "champions", nombre: "Champions Virgos", juego: "eafc27", formato: "Grupos + eliminatorias", cupo: 32, unidad: "equipos", duracion: "6 semanas",
+    inscripcion: { tipo: "fija", monto: 40000 }, porFecha: { monto: 3000, txt: "por partido" }, premios: [["Campeón", 800000], ["Subcampeón", 300000]],
+    equipos: "sorteo", demo: 9, desc: "Fase de grupos y llaves a lo Champions, con sorteo y todo." },
+  { id: "relampago", nombre: "Torneo Relámpago", juego: "eafc27", formato: "Eliminación directa", cupo: 16, unidad: "equipos", duracion: "1 día",
+    inscripcion: { tipo: "fija", monto: 20000 }, porFecha: null, premios: [["Campeón", 200000], ["Subcampeón", 80000]],
+    equipos: "sorteo", demo: 11, desc: "16 jugadores, un solo día, un solo campeón." },
+  { id: "novatos", nombre: "Liga Novatos", juego: "eafc27", formato: "Liga · todos contra todos", cupo: 16, unidad: "equipos", duracion: "6 semanas",
+    inscripcion: { tipo: "fija", monto: 10000 }, porFecha: { monto: 2000, txt: "por fecha" }, premios: [["Campeón", 150000]],
+    equipos: "sorteo", maxEstrellas: 3, demo: 6, desc: "Solo equipos de hasta 3 estrellas: parejo y barato para arrancar." },
+  { id: "nba", nombre: "Liga NBA 2K27", juego: "nba2k27", formato: "Liga · todos contra todos", cupo: 16, unidad: "jugadores", duracion: "6 semanas",
+    inscripcion: { tipo: "fija", monto: 30000 }, porFecha: { monto: 2000, txt: "por fecha" }, premios: [["Campeón", 400000], ["Subcampeón", 150000]],
+    equipos: "ninguno", demo: 9, desc: "Básquet virtual: puntos, rebotes, asistencias y triples." },
+  { id: "mk1", nombre: "Torneo Mortal Kombat 1", juego: "mk1", formato: "Eliminación directa", cupo: 32, unidad: "jugadores", duracion: "2 días",
+    inscripcion: { tipo: "fija", monto: 15000 }, porFecha: null, premios: [["Campeón", 250000], ["Subcampeón", 100000]],
+    equipos: "ninguno", demo: 18, desc: "Llaves directas, mejor de 3 rondas. Que gane el más letal." },
+  { id: "mk3", nombre: "Copa Mortal Kombat 3", juego: "mk3", formato: "Eliminación directa", cupo: 16, unidad: "jugadores", duracion: "1 día",
+    inscripcion: { tipo: "fija", monto: 10000 }, porFecha: null, premios: [["Campeón", 120000], ["Subcampeón", 50000]],
+    equipos: "ninguno", demo: 12, desc: "El clásico de los 90 en una sola jornada." },
+  { id: "pes6", nombre: "Liga PES 6 Retro", juego: "pes6", formato: "Liga · todos contra todos", cupo: 12, unidad: "jugadores", duracion: "2 meses",
+    inscripcion: { tipo: "fija", monto: 20000 }, porFecha: { monto: 2000, txt: "por fecha" }, premios: [["Campeón", 250000], ["Subcampeón", 100000]],
+    equipos: "ninguno", demo: 5, desc: "Para nostálgicos: el mejor juego de fútbol de todos los tiempos." },
+  { id: "f1", nombre: "Campeonato F1 2027", juego: "f1", formato: "Campeonato · 10 carreras", cupo: 20, unidad: "pilotos", duracion: "2 meses",
+    inscripcion: { tipo: "fija", monto: 25000 }, porFecha: { monto: 3000, txt: "por carrera" }, premios: [["Campeón", 400000], ["Subcampeón", 150000], ["Tercero", 75000]],
+    equipos: "ninguno", demo: 7, desc: "Diez Grandes Premios, puntos por posición y un solo campeón del año." },
 ];
+TORNEOS.forEach(t => { t.color = JUEGOS[t.juego].color; });
+const LIGAS = TORNEOS; // el resto del código llama "liga" a cada torneo
+const PREMIO = Math.max(...TORNEOS.map(t => t.premios[0][1])); // el premio más alto
 
 // Jugadores de ejemplo (nombre de usuario)
 const NOMBRES_DEMO = [
@@ -102,7 +161,7 @@ const PJ_DEMO = 10;
   const r = rng(27);
   const orden = [...EQUIPOS].sort((a, b) => b.estrellas - a.estrellas);
   let n = 0;
-  LIGAS.forEach(liga => {
+  LIGAS.slice(0, 5).forEach(liga => {
     for (let k = 0; k < 8; k++) {
       const equipo = orden[n % orden.length];
       const nombre = NOMBRES_DEMO[n % NOMBRES_DEMO.length];
@@ -136,7 +195,7 @@ const PJ_DEMO = 10;
 // Jugador de ejemplo: QuichaProPlayer (Real Madrid, Liga A)
 const _q = PARTICIPANTES.find(p => p.nombre === "QuichaProPlayer");
 Object.assign(_q, {
-  equipoId: EQUIPOS.find(t => t.nombre === "Real Madrid").id, liga: "A",
+  equipoId: EQUIPOS.find(t => t.nombre === "Real Madrid").id, liga: TORNEOS[0].id,
   pj: 10, g: 9, e: 1, p: 0, gf: 34, gc: 8, dg: 26, pts: 28, forma: ["G", "G", "E", "G", "G"],
   posesion: 61, tiros: 142, tirosArco: 91, pases: 4120, precision: 87, entradas: 74,
   faltas: 38, offsides: 9, corners: 58, amarillas: 3, rojas: 0, atajadas: 23,
@@ -174,7 +233,7 @@ const PARTIDOS_DEMO = (function () {
     const hA = mitad(A, ha), hB = mitad(B, hb);
     hB.pos = 100 - hA.pos;
     hA.atajadas = Math.max(0, hB.tirosArco - hB.goles); hB.atajadas = Math.max(0, hA.tirosArco - hA.goles);
-    return { id, jornada, liga: "A", a, b, ft: { a: A, b: B }, ht: { a: hA, b: hB } };
+    return { id, jornada, liga: TORNEOS[0].id, a, b, ft: { a: A, b: B }, ht: { a: hA, b: hB } };
   }
   return [
     mk("p10", 10, "quichaproplayer", "elcholo_nqn", 4, 1, 2, 0, 63),
@@ -221,8 +280,8 @@ const DEMO_INSCRIPTOS = (function () {
 const PARTIDOS_PROG_DEMO = (function () {
   const f = (dias, h) => { const d = new Date(); d.setDate(d.getDate() + dias); d.setHours(h, 0, 0, 0); return d.toISOString(); };
   return [
-    { id: "pp11", liga: "A", jornada: 11, a: "quichaproplayer", b: "elpibedelacosta", estado: "programado", fecha: f(3, 21), ft: null, ht: null },
-    { id: "pp12", liga: "A", jornada: 12, a: "titofc", b: "quichaproplayer", estado: "programado", fecha: f(7, 22), ft: null, ht: null },
-    { id: "pp13", liga: "A", jornada: 13, a: "quichaproplayer", b: "maxicrack10", estado: "programado", fecha: f(10, 20), ft: null, ht: null },
+    { id: "pp11", liga: TORNEOS[0].id, jornada: 11, a: "quichaproplayer", b: "elpibedelacosta", estado: "programado", fecha: f(3, 21), ft: null, ht: null },
+    { id: "pp12", liga: TORNEOS[0].id, jornada: 12, a: "titofc", b: "quichaproplayer", estado: "programado", fecha: f(7, 22), ft: null, ht: null },
+    { id: "pp13", liga: TORNEOS[0].id, jornada: 13, a: "quichaproplayer", b: "maxicrack10", estado: "programado", fecha: f(10, 20), ft: null, ht: null },
   ];
 })();
